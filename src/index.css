@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --forest-bg: #263936;
+    --forest-surface: #2D403D;
+    --forest-dark: #172421;
+    --forest-secondary: #355247;
+    --light-green: #607A69;
+    --cream: #F1EFE5;
+    --warm-white: #F7F5ED;
+    --sage: #8A9C82;
+  }
+
+  body {
+    background-color: var(--forest-bg);
+    color: var(--cream);
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Authentic Horizontal Green Wood Grain Texture */
+.wood-green-surface {
+  background-color: #233733;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(27, 42, 38, 0.45) 0px,
+      rgba(45, 64, 61, 0.3) 1px,
+      transparent 2px,
+      rgba(35, 55, 51, 0.4) 4px,
+      rgba(53, 82, 71, 0.25) 7px,
+      rgba(27, 42, 38, 0.5) 9px,
+      transparent 12px,
+      rgba(45, 64, 61, 0.35) 15px,
+      rgba(35, 55, 51, 0.3) 18px,
+      transparent 22px
+    ),
+    radial-gradient(ellipse at 20% 40%, rgba(53, 82, 71, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 60%, rgba(30, 45, 42, 0.5) 0%, transparent 70%);
+  background-size: 100% 28px, 100% 100%, 100% 100%;
+}
+
+.wood-green-dark {
+  background-color: #1a2825;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(19, 30, 28, 0.6) 0px,
+      rgba(35, 55, 51, 0.3) 1px,
+      transparent 3px,
+      rgba(45, 64, 61, 0.2) 6px,
+      rgba(19, 30, 28, 0.55) 10px,
+      transparent 14px,
+      rgba(35, 55, 51, 0.35) 18px
+    );
+  background-size: 100% 24px;
+}
+
+/* Custom Scrollbar in Muted Sage Green */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #172421;
+}
+::-webkit-scrollbar-thumb {
+  background: #355247;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8A9C82;
+}
+
+/* Hide scrollbar for category / pill sliders */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
