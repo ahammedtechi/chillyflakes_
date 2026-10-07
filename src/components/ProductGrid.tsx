@@ -42,28 +42,28 @@ export const ProductGrid: React.FC = () => {
   });
 
   return (
-    <section id="shop-section" className="max-w-[1360px] mx-auto px-2 sm:px-4 py-4 sm:py-6 text-[#F1EFE5]">
-      <div className="bg-[#263936] rounded-xl shadow-forest border border-[#355247] p-4 sm:p-6">
+    <section id="shop-section" className="max-w-[1360px] mx-auto px-3 sm:px-6 py-4 sm:py-6 text-[#1D251E]">
+      <div className="bg-white rounded-3xl shadow-soft border border-[#E2E7DF] p-5 sm:p-8">
         
         {/* Header & Filter Title */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#355247] gap-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#EEF2EB] gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-serif font-light text-[#F1EFE5]">
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#1D251E]">
                 Top Selection in Kitchen & Homeware
               </h2>
-              <span className="text-xs text-[#8A9C82] font-mono">
-                ({sortedProducts.length} items)
+              <span className="text-xs text-[#5F6D61] font-mono bg-[#F4F6F2] px-2 py-0.5 rounded-full border border-[#DFE6DD]">
+                {sortedProducts.length} items
               </span>
             </div>
-            <p className="text-xs text-[#F1EFE5]/75 mt-0.5 font-light">
+            <p className="text-xs text-[#5F6D61] mt-1 font-normal">
               Explore curated offers, pre-owned verified finds, and daily kitchen essentials.
             </p>
           </div>
 
           {/* Sort Tabs */}
           <div className="flex items-center gap-1 sm:gap-2 text-xs overflow-x-auto no-scrollbar">
-            <span className="font-semibold text-[#8A9C82] mr-1 hidden sm:inline uppercase text-[11px] tracking-wider">Sort By</span>
+            <span className="font-semibold text-[#7C8B7E] mr-1 hidden sm:inline uppercase text-[11px] tracking-wider">Sort By</span>
             {[
               { id: 'popularity', label: 'Popularity' },
               { id: 'price-low', label: 'Price -- Low to High' },
@@ -74,10 +74,10 @@ export const ProductGrid: React.FC = () => {
               <button
                 key={opt.id}
                 onClick={() => setSortOption(opt.id)}
-                className={`px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   sortOption === opt.id
-                    ? 'text-[#F1EFE5] border-b-2 border-[#8A9C82] font-bold'
-                    : 'text-[#8A9C82] hover:text-[#F1EFE5]'
+                    ? 'text-[#3C4A3E] bg-[#F0F4EE] border border-[#D5E1D3] font-bold'
+                    : 'text-[#7C8B7E] hover:text-[#1D251E]'
                 }`}
               >
                 {opt.label}
@@ -87,7 +87,7 @@ export const ProductGrid: React.FC = () => {
         </div>
 
         {/* Category Pills Strip */}
-        <div className="flex items-center gap-2 overflow-x-auto py-3.5 no-scrollbar border-b border-[#355247]">
+        <div className="flex items-center gap-2 overflow-x-auto py-4 no-scrollbar border-b border-[#EEF2EB]">
           {filterTabs.map((tab) => {
             const isActive = activeTab === tab.value;
             return (
@@ -97,10 +97,14 @@ export const ProductGrid: React.FC = () => {
                   setActiveTab(tab.value);
                   setSelectedCategory('All');
                 }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
-                  isActive
-                    ? 'bg-[#F1EFE5] text-[#172421] border-[#F1EFE5] font-bold shadow-xs'
-                    : 'bg-[#1E2D2A] text-[#F1EFE5] border-[#355247] hover:border-[#8A9C82]'
+                className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
+                  tab.value === 'Pre-Owned'
+                    ? isActive
+                      ? 'bg-[#D82C20] text-white border-[#D82C20] font-semibold shadow-xs'
+                      : 'bg-[#FDECEB] text-[#D82C20] border-[#FAC7C3] hover:bg-[#FCD8D5] font-semibold'
+                    : isActive
+                      ? 'bg-[#3C4A3E] text-white border-[#3C4A3E] font-semibold shadow-xs'
+                      : 'bg-[#F4F6F2] text-[#2C382E] border-[#DFE6DD] hover:border-[#3C4A3E] hover:bg-[#EAEFE8]'
                 }`}
               >
                 {tab.label}
@@ -110,20 +114,20 @@ export const ProductGrid: React.FC = () => {
         </div>
 
         {/* 4-Column Product Grid */}
-        <div className="pt-5">
+        <div className="pt-6">
           {sortedProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
               {sortedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           ) : (
-            <div className="py-16 text-center text-[#8A9C82]">
-              <p className="text-sm font-semibold text-[#F1EFE5]">No products found</p>
+            <div className="py-16 text-center text-[#5F6D61]">
+              <p className="text-sm font-semibold text-[#1D251E]">No products found</p>
               <p className="text-xs mt-1">Please try changing the filter or sorting options.</p>
               <button
                 onClick={() => { setActiveTab('All'); setSelectedCategory('All'); }}
-                className="mt-4 px-4 py-2 bg-[#355247] hover:bg-[#436558] text-[#F1EFE5] rounded-lg text-xs font-bold"
+                className="mt-4 px-5 py-2 bg-[#3C4A3E] hover:bg-[#2C372D] text-white rounded-full text-xs font-semibold transition-colors shadow-xs"
               >
                 Reset Filters
               </button>

@@ -18,29 +18,29 @@ export const Newsletter: React.FC = () => {
   };
 
   return (
-    <section className="py-20 sm:py-28 bg-[#1E2D2A] text-[#F1EFE5] border-t border-[#2D403D]">
+    <section className="py-16 sm:py-24 bg-[#F4F6F2] text-[#1D251E] border-t border-[#E5EAE2]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         
         {/* Small Label */}
-        <span className="text-[10px] font-semibold tracking-editorial uppercase text-[#8A9C82] block mb-3">
+        <span className="text-[10px] font-bold tracking-wider uppercase text-[#3C4A3E] block mb-2">
           CHILLY FLAKES DISPATCH
         </span>
 
-        {/* Large Cream Heading */}
-        <h2 className="text-3xl sm:text-5xl font-serif font-light text-[#F1EFE5] tracking-tight mb-3">
-          STAY IN THE LOOP.
+        {/* Large Heading */}
+        <h2 className="text-3xl sm:text-5xl font-serif font-bold text-[#1D251E] tracking-tight mb-3">
+          Stay in the Loop
         </h2>
 
         {/* Text */}
-        <p className="text-sm sm:text-base text-[#F1EFE5]/75 font-light max-w-md mx-auto mb-10 leading-relaxed">
+        <p className="text-sm sm:text-base text-[#5F6D61] font-normal max-w-md mx-auto mb-8 leading-relaxed">
           Get first access to new finds, special offers and fresh arrivals. 
           New pre-owned batches cataloged every week.
         </p>
 
-        {/* Form with Thin Borders & Minimal Styling */}
+        {/* Form */}
         {isSubscribed ? (
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#263936] border border-[#355247] text-[#F1EFE5] text-xs uppercase tracking-luxury">
-            <CheckCircle2 className="w-4 h-4 text-[#8A9C82]" />
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#EAF0E6] border border-[#D5E1D3] text-[#3C4A3E] text-xs font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-[#3C4A3E]" />
             <span>Thank you. You have joined the Chilly Flakes circle.</span>
           </div>
         ) : (
@@ -50,20 +50,20 @@ export const Newsletter: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="YOUR EMAIL ADDRESS"
-                className="flex-grow px-4 py-3.5 rounded-lg bg-[#172421] border border-[#355247] text-xs uppercase tracking-luxury text-[#F1EFE5] placeholder-[#8A9C82]/60 focus:outline-none focus:border-[#F1EFE5] transition-colors"
+                placeholder="Your email address"
+                className="flex-grow px-5 py-3.5 rounded-full bg-white border border-[#DFE6DD] text-xs text-[#1D251E] placeholder-[#7F8F81] focus:outline-none focus:border-[#3C4A3E] shadow-2xs transition-colors"
                 required
               />
               <button
                 type="submit"
-                className="px-8 py-3.5 bg-[#F1EFE5] hover:bg-[#F7F5ED] text-[#172421] text-xs font-semibold tracking-luxury uppercase transition-all duration-200 rounded-lg flex items-center justify-center gap-2 flex-shrink-0"
+                className="px-7 py-3.5 bg-[#3C4A3E] hover:bg-[#2C372D] text-white text-xs font-bold uppercase tracking-wider transition-all rounded-full flex items-center justify-center gap-2 flex-shrink-0 shadow-xs"
               >
-                <span>SUBSCRIBE</span>
+                <span>Subscribe</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <p className="text-[10px] uppercase tracking-luxury text-[#8A9C82]/70 mt-3 font-light">
+            <p className="text-[11px] text-[#7C8B7E] mt-3 font-normal">
               No advertising clutter. Only curated updates.
             </p>
           </form>

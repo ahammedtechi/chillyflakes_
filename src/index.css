@@ -4,75 +4,43 @@
 
 @layer base {
   :root {
-    --forest-bg: #263936;
-    --forest-surface: #2D403D;
-    --forest-dark: #172421;
-    --forest-secondary: #355247;
-    --light-green: #607A69;
-    --cream: #F1EFE5;
-    --warm-white: #F7F5ED;
-    --sage: #8A9C82;
+    --canvas-bg: #F5F6F2;
+    --surface-card: #FFFFFF;
+    --olive-primary: #3C4A3E;
+    --olive-dark: #2C372D;
+    --olive-light: #4B5A4D;
+    --sage-hero: #C4D3C2;
+    --sage-soft: #E6EDE4;
+    --sage-tint: #F0F4EE;
+    --sand-promo: #ECDBC2;
+    --clay-promo: #E2C8B8;
+    --text-primary: #1D251E;
+    --text-secondary: #5F6D61;
+    --border-light: #E2E7E0;
+    --border-card: #E5ECE3;
   }
 
   body {
-    background-color: var(--forest-bg);
-    color: var(--cream);
+    background-color: var(--canvas-bg);
+    color: var(--text-primary);
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
-/* Authentic Horizontal Green Wood Grain Texture */
-.wood-green-surface {
-  background-color: #233733;
-  background-image: 
-    repeating-linear-gradient(
-      0deg,
-      rgba(27, 42, 38, 0.45) 0px,
-      rgba(45, 64, 61, 0.3) 1px,
-      transparent 2px,
-      rgba(35, 55, 51, 0.4) 4px,
-      rgba(53, 82, 71, 0.25) 7px,
-      rgba(27, 42, 38, 0.5) 9px,
-      transparent 12px,
-      rgba(45, 64, 61, 0.35) 15px,
-      rgba(35, 55, 51, 0.3) 18px,
-      transparent 22px
-    ),
-    radial-gradient(ellipse at 20% 40%, rgba(53, 82, 71, 0.4) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 60%, rgba(30, 45, 42, 0.5) 0%, transparent 70%);
-  background-size: 100% 28px, 100% 100%, 100% 100%;
-}
-
-.wood-green-dark {
-  background-color: #1a2825;
-  background-image: 
-    repeating-linear-gradient(
-      0deg,
-      rgba(19, 30, 28, 0.6) 0px,
-      rgba(35, 55, 51, 0.3) 1px,
-      transparent 3px,
-      rgba(45, 64, 61, 0.2) 6px,
-      rgba(19, 30, 28, 0.55) 10px,
-      transparent 14px,
-      rgba(35, 55, 51, 0.35) 18px
-    );
-  background-size: 100% 24px;
-}
-
-/* Custom Scrollbar in Muted Sage Green */
+/* Custom Minimal Scrollbar in Olive / Sage */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #172421;
+  background: #F0F4EE;
 }
 ::-webkit-scrollbar-thumb {
-  background: #355247;
-  border-radius: 3px;
+  background: #C4D3C2;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #8A9C82;
+  background: #3C4A3E;
 }
 
 /* Hide scrollbar for category / pill sliders */
@@ -82,4 +50,9 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Smooth Image Transitions */
+img {
+  image-rendering: auto;
 }

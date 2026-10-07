@@ -3,46 +3,46 @@ import { ShieldCheck, Truck, RefreshCw, CreditCard } from 'lucide-react';
 
 export const OfferStrip: React.FC = () => {
   return (
-    <section className="max-w-[1360px] mx-auto px-2 sm:px-4 py-2">
-      <div className="bg-[#1E2D2A] rounded-lg border border-[#355247] p-3 sm:p-4 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-[#F1EFE5] shadow-forest-sm">
+    <section className="max-w-[1360px] mx-auto px-3 sm:px-6 py-2">
+      <div className="bg-white rounded-2xl border border-[#E2E7DF] p-4 sm:p-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-[#1D251E] shadow-soft">
         
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#263936] border border-[#355247] text-[#8A9C82] flex items-center justify-center flex-shrink-0">
-            <ShieldCheck className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#F0F4EE] border border-[#D5E1D3] text-[#3C4A3E] flex items-center justify-center flex-shrink-0">
+            <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-[#F1EFE5] leading-none">Chilly Assured</p>
-            <p className="text-[11px] text-[#8A9C82] mt-0.5">100% Sanitized & Tested</p>
+            <p className="text-xs font-bold text-[#1D251E] leading-none">Chilly Assured</p>
+            <p className="text-[11px] text-[#5F6D61] mt-1">100% Sanitized & Tested</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#263936] border border-[#355247] text-[#8A9C82] flex items-center justify-center flex-shrink-0">
-            <Truck className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#F0F4EE] border border-[#D5E1D3] text-[#3C4A3E] flex items-center justify-center flex-shrink-0">
+            <Truck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-[#F1EFE5] leading-none">Free Delivery</p>
-            <p className="text-[11px] text-[#8A9C82] mt-0.5">On orders above ₹499</p>
+            <p className="text-xs font-bold text-[#1D251E] leading-none">Free Delivery</p>
+            <p className="text-[11px] text-[#5F6D61] mt-1">On orders above ₹499</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#263936] border border-[#355247] text-[#8A9C82] flex items-center justify-center flex-shrink-0">
-            <RefreshCw className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#F0F4EE] border border-[#D5E1D3] text-[#3C4A3E] flex items-center justify-center flex-shrink-0">
+            <RefreshCw className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-[#F1EFE5] leading-none">7 Days Replacement</p>
-            <p className="text-[11px] text-[#8A9C82] mt-0.5">Hassle-free doorstep pickup</p>
+            <p className="text-xs font-bold text-[#1D251E] leading-none">7 Days Replacement</p>
+            <p className="text-[11px] text-[#5F6D61] mt-1">Hassle-free doorstep pickup</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#263936] border border-[#355247] text-[#8A9C82] flex items-center justify-center flex-shrink-0">
-            <CreditCard className="w-4 h-4" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#F0F4EE] border border-[#D5E1D3] text-[#3C4A3E] flex items-center justify-center flex-shrink-0">
+            <CreditCard className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-bold text-[#F1EFE5] leading-none">Special Savings</p>
-            <p className="text-[11px] text-[#8A9C82] mt-0.5">Extra 10% off with code EARTHY10</p>
+            <p className="text-xs font-bold text-[#1D251E] leading-none">Special Savings</p>
+            <p className="text-[11px] text-[#5F6D61] mt-1">10% off with EARTHY10</p>
           </div>
         </div>
 

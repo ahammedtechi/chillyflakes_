@@ -15,7 +15,7 @@ import { ToastContainer } from './components/ToastContainer';
 export const App: React.FC = () => {
   return (
     <StoreProvider>
-      <div className="min-h-screen bg-[#263936] text-[#F1EFE5] flex flex-col font-sans selection:bg-[#355247] selection:text-[#F1EFE5]">
+      <div className="min-h-screen bg-[#F5F6F2] text-[#1D251E] flex flex-col font-sans selection:bg-[#3C4A3E] selection:text-white">
         
         {/* 1. Flipkart-style Top Header */}
         <Navbar />

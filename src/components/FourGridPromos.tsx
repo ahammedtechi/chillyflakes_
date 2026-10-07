@@ -67,37 +67,37 @@ export const FourGridPromos: React.FC = () => {
   };
 
   return (
-    <section className="max-w-[1360px] mx-auto px-2 sm:px-4 py-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <section className="max-w-[1360px] mx-auto px-3 sm:px-6 py-3 sm:py-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {promoBoxes.map((box, index) => (
           <div
             key={index}
-            className="bg-[#263936] text-[#F1EFE5] rounded-xl shadow-forest border border-[#355247] p-4 flex flex-col justify-between"
+            className="bg-white text-[#1D251E] rounded-3xl shadow-soft border border-[#EDE2DC] hover:border-[#D97D67]/40 p-5 flex flex-col justify-between hover:shadow-card-warm transition-all"
           >
             <div>
-              <h3 className="text-base font-serif font-light text-[#F1EFE5] leading-tight mb-3">
+              <h3 className="text-base font-serif font-bold text-[#1D251E] leading-snug mb-3">
                 {box.title}
               </h3>
 
-              {/* 2x2 Image Grid */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              {/* 2x2 Image Grid with warm reddish touch */}
+              <div className="grid grid-cols-2 gap-2.5 mb-3">
                 {box.items.map((item, i) => (
                   <div
                     key={i}
                     onClick={() => handleCardClick(box.category)}
-                    className="p-2 border border-[#355247] rounded-lg hover:border-[#8A9C82]/60 cursor-pointer group bg-[#1E2D2A] flex flex-col justify-between transition-colors"
+                    className="p-2 border border-[#ECE0DA] rounded-2xl hover:border-[#D97D67]/60 cursor-pointer group bg-[#FFFDFD] hover:bg-[#FAF4F0] flex flex-col justify-between transition-colors"
                   >
-                    <div className="w-full aspect-square mb-1.5 flex items-center justify-center overflow-hidden rounded bg-[#F7F5ED] p-1.5">
+                    <div className="w-full aspect-square mb-1.5 flex items-center justify-center overflow-hidden rounded-xl bg-[#FAF4F0] p-1.5 border border-[#F3E7E2]">
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform"
+                        className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-108 transition-transform duration-300"
                       />
                     </div>
-                    <p className="text-[11px] font-medium text-[#F1EFE5] line-clamp-1 group-hover:text-[#8A9C82] transition-colors">
+                    <p className="text-[11px] font-medium text-[#1D251E] line-clamp-1 group-hover:text-[#D82C20] transition-colors">
                       {item.name}
                     </p>
-                    <p className="text-[11px] font-mono text-[#dfab7e]">
+                    <p className="text-[11px] font-bold text-[#D82C20]">
                       {item.price}
                     </p>
                   </div>
@@ -107,10 +107,10 @@ export const FourGridPromos: React.FC = () => {
 
             <button
               onClick={() => handleCardClick(box.category)}
-              className="text-xs font-semibold text-[#8A9C82] hover:text-[#F1EFE5] flex items-center gap-1 pt-1 transition-colors uppercase tracking-wider"
+              className="text-xs font-semibold text-[#3C4A3E] hover:text-[#D82C20] flex items-center gap-1.5 pt-2 transition-colors uppercase tracking-wider group"
             >
-              <span>Explore More</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Explore Collection</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         ))}

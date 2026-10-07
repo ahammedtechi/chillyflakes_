@@ -22,27 +22,27 @@ export const CategorySection: React.FC = () => {
   };
 
   return (
-    <section id="categories-section" className="py-20 sm:py-28 bg-[#263936] text-[#F1EFE5] border-b border-[#2D403D]">
+    <section id="categories-section" className="py-16 sm:py-24 bg-white text-[#1D251E] border-b border-[#E5EAE2]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 pb-6 border-b border-[#355247]/60 gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 pb-6 border-b border-[#EEF2EB] gap-4">
           <div>
-            <span className="text-[10px] font-semibold tracking-editorial uppercase text-[#8A9C82] block mb-2">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-[#3C4A3E] block mb-2">
               CATALOGUE DIRECTORY
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-light text-[#F1EFE5] tracking-tight">
-              EXPLORE THE COLLECTION
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-[#1D251E] tracking-tight">
+              Explore the Collection
             </h2>
           </div>
 
-          <p className="text-xs sm:text-sm text-[#F1EFE5]/70 max-w-md font-light leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#5F6D61] max-w-md font-normal leading-relaxed">
             From hand-hewn wooden turners to borosilicate jars, browse curated objects 
             ready to bring quiet utility to your cooking space.
           </p>
         </div>
 
-        {/* Large Editorial Category Cards Grid */}
+        {/* Large Category Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat.name;
@@ -51,25 +51,23 @@ export const CategorySection: React.FC = () => {
               <div
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.name)}
-                className={`group cursor-pointer rounded-xl overflow-hidden wood-green-dark border transition-all duration-500 relative flex flex-col justify-between ${
+                className={`group cursor-pointer rounded-3xl overflow-hidden bg-[#FAFBF9] border transition-all duration-500 relative flex flex-col justify-between hover:shadow-card ${
                   isSelected 
-                    ? 'border-[#F1EFE5] shadow-forest-lg ring-1 ring-[#F1EFE5]/40' 
-                    : 'border-[#355247] hover:border-[#F1EFE5]/60 hover:shadow-forest'
+                    ? 'border-[#3C4A3E] shadow-card ring-2 ring-[#3C4A3E]/30' 
+                    : 'border-[#E5EAE2] hover:border-[#3C4A3E]/50'
                 }`}
               >
                 {/* Large Lifestyle / Product Image Container */}
-                <div className="relative aspect-4/3 w-full overflow-hidden bg-[#1E2D2A]">
+                <div className="relative aspect-4/3 w-full overflow-hidden bg-[#F4F6F2]">
                   <img
                     src={cat.image}
                     alt={cat.name}
-                    className="w-full h-full object-cover object-center group-hover:scale-106 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
+                    className="w-full h-full object-cover object-center group-hover:scale-106 transition-transform duration-700 ease-out"
                     loading="lazy"
                   />
-                  {/* Subtle dark-green gradient vignette */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a2825] via-transparent to-transparent opacity-70 group-hover:opacity-40 transition-opacity duration-300" />
                   
                   {/* Product Count Pill */}
-                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-[#172421]/80 backdrop-blur-xs text-[#8A9C82] text-[10px] font-mono border border-[#355247]">
+                  <div className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-xs text-[#3C4A3E] text-[10px] font-bold border border-[#E5EAE2] shadow-2xs">
                     {cat.productCount} pcs
                   </div>
                 </div>
@@ -78,20 +76,20 @@ export const CategorySection: React.FC = () => {
                 <div className="p-5 flex flex-col justify-between flex-grow">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <h3 className="font-serif text-base sm:text-lg font-medium tracking-luxury text-[#F1EFE5] group-hover:text-[#F7F5ED] group-hover:translate-x-1 transition-all duration-300">
+                      <h3 className="font-serif text-base sm:text-lg font-bold text-[#1D251E] group-hover:text-[#3C4A3E] transition-colors">
                         {cat.name}
                       </h3>
-                      <div className="w-7 h-7 rounded-full border border-[#355247] group-hover:border-[#F1EFE5]/60 flex items-center justify-center text-[#8A9C82] group-hover:text-[#F1EFE5] transition-colors flex-shrink-0">
-                        <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      <div className="w-8 h-8 rounded-full border border-[#DFE6DD] group-hover:border-[#3C4A3E] group-hover:bg-[#3C4A3E] group-hover:text-white flex items-center justify-center text-[#5F6D61] transition-all flex-shrink-0">
+                        <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                       </div>
                     </div>
 
-                    <p className="text-xs text-[#F1EFE5]/60 font-light line-clamp-1 group-hover:text-[#F1EFE5]/80 transition-colors">
+                    <p className="text-xs text-[#5F6D61] font-normal line-clamp-1">
                       {cat.description}
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[#355247]/50 flex items-center justify-between text-[10px] uppercase tracking-luxury text-[#8A9C82] group-hover:text-[#F1EFE5] transition-colors">
+                  <div className="mt-4 pt-3 border-t border-[#EEF2EB] flex items-center justify-between text-[10px] uppercase font-bold text-[#7C8B7E] group-hover:text-[#3C4A3E] transition-colors">
                     <span>VIEW CATEGORY</span>
                     <span className="font-mono">№ 0{categories.indexOf(cat) + 1}</span>
                   </div>

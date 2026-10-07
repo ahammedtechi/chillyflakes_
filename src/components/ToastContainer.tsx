@@ -12,11 +12,11 @@ export const ToastContainer: React.FC = () => {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#172421] text-[#F1EFE5] border border-[#355247] shadow-forest text-xs font-light tracking-wide pointer-events-auto"
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#3C4A3E] text-white border border-[#4E6050] shadow-xl text-xs font-medium tracking-wide pointer-events-auto"
         >
-          {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#8A9C82] flex-shrink-0" />}
-          {toast.type === 'info' && <Info className="w-4 h-4 text-[#8A9C82] flex-shrink-0" />}
-          {toast.type === 'warning' && <AlertCircle className="w-4 h-4 text-[#A5B59E] flex-shrink-0" />}
+          {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#C4D3C2] flex-shrink-0" />}
+          {toast.type === 'info' && <Info className="w-4 h-4 text-[#ECDBC2] flex-shrink-0" />}
+          {toast.type === 'warning' && <AlertCircle className="w-4 h-4 text-[#E2C8B8] flex-shrink-0" />}
           <span className="flex-1">{toast.message}</span>
         </div>
       ))}
