@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { Logo } from './Logo';
 
 export const LoginModal: React.FC = () => {
   const { isLoginOpen, setIsLoginOpen, loginUser, showToast } = useStore();
@@ -41,116 +42,96 @@ export const LoginModal: React.FC = () => {
       />
 
       <div className="flex min-h-full items-center justify-center p-3 sm:p-6">
-        <div className="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all w-full max-w-2xl flex flex-col md:flex-row border border-[#E2E7DF] text-[#1D251E]">
+        <div className="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all w-full max-w-2xl flex flex-col md:flex-row border border-[#ECE7DD] text-[#223B28]">
           
           {/* Close button */}
           <button
             onClick={() => { setIsLoginOpen(false); setOtpStep(false); }}
-            className="absolute top-4 right-4 text-[#5F6D61] hover:text-[#1D251E] hover:bg-[#F4F6F2] rounded-full p-1.5 z-20 transition-colors"
+            className="absolute top-4 right-4 text-[#7E8F80] hover:text-[#223B28] hover:bg-[#FAF7F2] rounded-full p-1.5 z-20 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
 
-          {/* Left Deep Olive Banner */}
-          <div className="md:w-2/5 bg-[#3C4A3E] text-white p-7 sm:p-8 flex flex-col justify-between">
+          {/* Left Forest Green Banner */}
+          <div className="md:w-2/5 bg-[#243F29] text-white p-7 sm:p-8 flex flex-col justify-between">
             <div>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm mb-4">
-                🌿
+              <div className="mb-6">
+                <Logo variant="light" size="sm" showTagline={false} />
               </div>
               <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-white">
-                {otpStep ? 'Verify OTP' : 'Log In'}
+                Welcome Back
               </h2>
-              <p className="text-xs sm:text-sm text-[#E4EBE2]/90 mt-3 leading-relaxed font-light">
-                {otpStep
-                  ? 'Please enter the 4-digit code sent to your mobile or email.'
-                  : 'Access your orders, wishlist, verified pre-owned items, and special member pricing.'}
+              <p className="text-xs text-[#D1DEC0] mt-3 leading-relaxed">
+                Log in to access your handcrafted favorites, order tracking, and artisan rewards.
               </p>
             </div>
 
-            <div className="hidden md:block pt-8 text-center">
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#C4D3C2]">
-                <ShieldCheck className="w-4 h-4 text-[#C4D3C2]" />
-                <span>100% Encrypted & Safe Login</span>
+            <div className="pt-6 border-t border-[#35523A] space-y-2 text-[11px] text-[#D1DEC0]">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#A3C4A5]" />
+                <span>100% Certified Local Artisans</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[#A3C4A5]">&bull;</span>
+                <span>Fast & Safe Checkout</span>
               </div>
             </div>
           </div>
 
-          {/* Right Input Form */}
-          <div className="md:w-3/5 p-7 sm:p-8 flex flex-col justify-between space-y-6 bg-white">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              
-              {!otpStep ? (
+          {/* Right Login Form */}
+          <div className="md:w-3/5 p-7 sm:p-8 flex flex-col justify-between bg-white">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#223B28] mb-1.5">
+                  Enter Mobile Number or Email
+                </label>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="e.g. maya@example.com or +1 (555) 000-0000"
+                  disabled={otpStep}
+                  required
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-[#ECE7DD] rounded-xl focus:outline-none focus:border-[#2E4D34] focus:ring-1 focus:ring-[#2E4D34] text-[#223B28]"
+                />
+              </div>
+
+              {otpStep && (
                 <div>
-                  <label className="text-[11px] font-bold text-[#5F6D61] uppercase tracking-wider block mb-1.5">
-                    Email or Mobile Number
-                  </label>
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="e.g. name@example.com"
-                    className="w-full py-2.5 px-3.5 border border-[#DFE6DD] focus:border-[#3C4A3E] bg-[#F4F6F2] text-sm text-[#1D251E] focus:outline-none placeholder-[#7F8F81] rounded-xl"
-                    required
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="text-[11px] font-bold text-[#5F6D61] uppercase tracking-wider block mb-1.5">
-                    Enter 4-Digit OTP (Use 1234)
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-[#223B28]">
+                      Enter 4-Digit OTP
+                    </label>
+                    <span className="text-[10px] text-[#2E4D34] font-medium">
+                      Demo OTP: 1234
+                    </span>
+                  </div>
                   <input
                     type="text"
                     maxLength={4}
                     value={otpValue}
                     onChange={(e) => setOtpValue(e.target.value)}
                     placeholder="1234"
-                    className="w-full py-2.5 px-3 border border-[#DFE6DD] focus:border-[#3C4A3E] bg-[#F4F6F2] text-center tracking-widest text-lg font-mono text-[#1D251E] focus:outline-none rounded-xl"
+                    autoFocus
                     required
+                    className="w-full px-3.5 py-2.5 text-center tracking-widest font-mono text-base border border-[#ECE7DD] rounded-xl focus:outline-none focus:border-[#2E4D34]"
                   />
                 </div>
               )}
 
-              <p className="text-[11px] text-[#7C8B7E] leading-relaxed font-normal">
-                By continuing, you agree to Chilly Flakes's{' '}
-                <a href="#terms" onClick={(e) => { e.preventDefault(); alert("Terms of Use"); }} className="text-[#3C4A3E] font-semibold hover:underline">
-                  Terms of Use
-                </a>{' '}
-                and{' '}
-                <a href="#privacy" onClick={(e) => { e.preventDefault(); alert("Privacy Policy"); }} className="text-[#3C4A3E] font-semibold hover:underline">
-                  Privacy Policy
-                </a>.
-              </p>
-
               <button
                 type="submit"
-                className="w-full py-3 bg-[#3C4A3E] hover:bg-[#2C372D] text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-xs transition-colors"
+                className="w-full py-3 bg-[#2E4D34] hover:bg-[#233B27] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs transition-colors"
               >
-                {otpStep ? 'VERIFY & PROCEED' : 'REQUEST OTP'}
+                {otpStep ? 'Verify & Continue' : 'Request OTP'}
               </button>
-
-              {otpStep && (
-                <button
-                  type="button"
-                  onClick={() => setOtpStep(false)}
-                  className="w-full text-center text-xs text-[#5F6D61] hover:text-[#1D251E] font-medium"
-                >
-                  Change Email / Mobile Number
-                </button>
-              )}
             </form>
 
-            <div className="pt-4 border-t border-[#EEF2EB] text-center">
-              <button
-                onClick={() => {
-                  setInputValue('guest@chillyflakes.in');
-                  loginUser('guest@chillyflakes.in');
-                }}
-                className="text-xs text-[#3C4A3E] hover:underline font-semibold"
-              >
-                New to Chilly Flakes? One-Click Guest Login
-              </button>
+            <div className="pt-6 border-t border-[#ECE7DD] text-center text-[11px] text-[#7E8F80]">
+              By continuing, you agree to ChillyFlakes{' '}
+              <a href="#terms" className="text-[#2E4D34] underline">Terms of Use</a> and{' '}
+              <a href="#privacy" className="text-[#2E4D34] underline">Privacy Policy</a>.
             </div>
-
           </div>
 
         </div>
@@ -158,3 +139,5 @@ export const LoginModal: React.FC = () => {
     </div>
   );
 };
+
+export default LoginModal;

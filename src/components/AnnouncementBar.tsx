@@ -1,35 +1,66 @@
 import React from 'react';
-import { Recycle, Truck, ShieldCheck } from 'lucide-react';
+import { Sprout, ShoppingBag } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
 
 export const AnnouncementBar: React.FC = () => {
+  const { cartCount, setIsCartOpen, setIsLoginOpen, user } = useStore();
+
   return (
-    <div className="bg-[#3C4A3E] text-[#F1F5EF] text-[11px] font-medium py-2 px-4 border-b border-[#313E33] relative z-30">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1 text-center sm:text-left">
-        <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 text-white">
-            <Recycle className="w-3.5 h-3.5 text-[#C4D3C2]" />
-            <span className="uppercase text-[10px] tracking-wider">Mindfully Crafted Kitchenware & Circular Homeware</span>
+    <div className="bg-[#243F29] text-[#E8ECE6] text-[10px] sm:text-[11px] font-normal py-1.5 px-3 sm:px-4 border-b border-[#1C3320] relative z-40">
+      <div className="max-w-[1360px] mx-auto flex items-center justify-between gap-2">
+        {/* Left Side: Tagline with Leaf Icon */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          <Sprout className="w-3.5 h-3.5 text-[#A3C4A5] flex-shrink-0" />
+          <span className="tracking-wide text-white/90 hidden sm:inline">
+            Support Handmade &bull; Choose Natural &bull; Shop Local
           </span>
-          <span className="hidden md:inline text-[#556957]">|</span>
-          <span className="hidden md:inline-flex items-center gap-1.5 text-[#E4EBE2]/90">
-            <Truck className="w-3.5 h-3.5 text-[#C4D3C2]" />
-            <span className="uppercase text-[10px] tracking-wider">Doorstep Express Delivery</span>
-          </span>
-          <span className="hidden lg:inline text-[#556957]">|</span>
-          <span className="hidden lg:inline-flex items-center gap-1.5 text-[#C4D3C2]">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#C4D3C2]" />
-            <span className="uppercase text-[10px] tracking-wider">Certified 7-Day Guarantee</span>
+          <span className="tracking-wide text-white/90 sm:hidden">
+            Support Handmade &bull; Shop Local
           </span>
         </div>
 
-        <div className="flex items-center gap-4 text-[10px] text-[#ECDBC2] uppercase tracking-wider">
-          <span className="hidden sm:inline hover:text-white transition-colors">
-            Free shipping over ₹499
-          </span>
-          <span className="text-[#556957] hidden sm:inline">•</span>
-          <span className="text-white">Chilly Flakes</span>
+        {/* Right Side: Auth Links & Mini Cart */}
+        <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-[#E2ECE0]/90 flex-shrink-0">
+          {user?.isLoggedIn ? (
+            <span className="text-white font-medium truncate max-w-[100px]">Hello, {user.name}</span>
+          ) : (
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button 
+                onClick={() => setIsLoginOpen(true)}
+                className="hover:text-white transition-colors hover:underline"
+              >
+                Login
+              </button>
+              <span className="text-[#527357]">|</span>
+              <button 
+                onClick={() => setIsLoginOpen(true)}
+                className="hover:text-white transition-colors hover:underline"
+              >
+                Register
+              </button>
+              <span className="text-[#527357] hidden md:inline">|</span>
+              <a 
+                href="#seller" 
+                onClick={(e) => { e.preventDefault(); alert("Become a Seller: Partner with ChillyFlakes to reach conscious consumers nationwide!"); }}
+                className="hover:text-white transition-colors hover:underline hidden md:inline"
+              >
+                Become a Seller
+              </a>
+            </div>
+          )}
+
+          {/* Cart Counter */}
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="flex items-center gap-1 hover:text-white transition-colors pl-1.5 sm:pl-2 border-l border-[#527357]"
+          >
+            <ShoppingBag className="w-3.5 h-3.5 text-[#A3C4A5]" />
+            <span className="font-semibold text-white">({cartCount})</span>
+          </button>
         </div>
       </div>
     </div>
   );
 };
+
+export default AnnouncementBar;

@@ -1,11 +1,12 @@
 import React from 'react';
 import { StoreProvider } from './context/StoreContext';
+import { AnnouncementBar } from './components/AnnouncementBar';
 import { Navbar } from './components/Navbar';
-import { CategoryBar } from './components/CategoryBar';
-import { HeroSlider } from './components/HeroSlider';
-import { DealsOfTheDay } from './components/DealsOfTheDay';
-import { FourGridPromos } from './components/FourGridPromos';
-import { ProductGrid } from './components/ProductGrid';
+import { HeroSection } from './components/HeroSection';
+import { ShopByCategory } from './components/ShopByCategory';
+import { FeaturedProducts } from './components/FeaturedProducts';
+import { ServicesSection } from './components/ServicesSection';
+import { WhyChooseUs } from './components/WhyChooseUs';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { QuickViewModal } from './components/QuickViewModal';
@@ -15,32 +16,35 @@ import { ToastContainer } from './components/ToastContainer';
 export const App: React.FC = () => {
   return (
     <StoreProvider>
-      <div className="min-h-screen bg-[#F5F6F2] text-[#1D251E] flex flex-col font-sans selection:bg-[#3C4A3E] selection:text-white">
+      <div className="min-h-screen bg-[#FAF7F2] text-[#223B28] flex flex-col font-sans selection:bg-[#2E4D34] selection:text-white">
         
-        {/* 1. Flipkart-style Top Header */}
+        {/* 1. Top Announcement Bar matching screenshot */}
+        <AnnouncementBar />
+
+        {/* 2. Main Navigation Header with custom ChillyFlakes logo and search bar */}
         <Navbar />
 
-        {/* 2. Top Category Icon Strip with Subcategories */}
-        <CategoryBar />
-
         {/* Main Content Area */}
-        <main className="flex-grow space-y-2 pb-6">
+        <main className="flex-grow">
           
-          {/* 3. Hero Carousel Banner Slider */}
-          <HeroSlider />
+          {/* 3. Hero Section: Natural Products Handmade with Love */}
+          <HeroSection />
 
-          {/* 4. Deals of the Day with Countdown Clock */}
-          <DealsOfTheDay />
+          {/* 4. Shop by Category: 7 Circular Categories */}
+          <ShopByCategory />
 
-          {/* 6. Four-Box Recommendation Shelves */}
-          <FourGridPromos />
+          {/* 5. Featured Products: 5 Cards Grid */}
+          <FeaturedProducts />
 
-          {/* 7. Product Catalog Shelf with Filters and f-Assured badges */}
-          <ProductGrid />
+          {/* 6. Our Services: 4 Skilled Professional Services */}
+          <ServicesSection />
+
+          {/* 7. Why Choose ChillyFlakes: 5 Trust Badges */}
+          <WhyChooseUs />
 
         </main>
 
-        {/* 8. Flipkart Signature Mega Footer */}
+        {/* 8. Deep Forest Green Footer */}
         <Footer />
 
         {/* Interactive Overlays & Drawers */}

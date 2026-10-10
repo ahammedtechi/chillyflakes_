@@ -1,102 +1,147 @@
-import React from 'react';
-import { ArrowRight, Recycle } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import React, { useState } from 'react';
+import { ArrowRight } from 'lucide-react';
+
+interface HeroSlide {
+  id: string;
+  subtitle: string;
+  titleLine1: string;
+  titleLine2: string;
+  description: string;
+  buttonText: string;
+}
+
+const slides: HeroSlide[] = [
+  {
+    id: 'slide-1',
+    subtitle: 'WELCOME TO CHILLYFLAKES',
+    titleLine1: 'Natural Products',
+    titleLine2: 'Handmade with Love',
+    description: 'Discover unique, eco-friendly products, beautiful jewelry, fashionable clothes, home décor and professional services — all from talented local sellers.',
+    buttonText: 'Shop Now',
+  },
+  {
+    id: 'slide-2',
+    subtitle: 'MINDFUL ARTISAN GOODS',
+    titleLine1: 'Artisan Kitchen',
+    titleLine2: 'Crafted with Passion',
+    description: 'Carefully seasoned cookware, hand-carved teak spoons, and stone ceramics crafted to nourish your everyday home rituals.',
+    buttonText: 'Explore Collection',
+  },
+  {
+    id: 'slide-3',
+    subtitle: 'PURE BOTANICAL CARE',
+    titleLine1: 'Organic Self-Care',
+    titleLine2: 'Pure Botanical Touch',
+    description: 'Cold-pressed botanical oils, lavender artisanal soaps, and pure soy candles blended with zero toxic additives.',
+    buttonText: 'Discover Wellness',
+  }
+];
 
 export const HeroSection: React.FC = () => {
-  const { setSelectedCategory } = useStore();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  const scrollTo = (id: string, categoryFilter?: string) => {
-    if (categoryFilter) {
-      setSelectedCategory(categoryFilter);
-    }
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+  const slide = slides[currentSlide];
+
+  const handleShopNow = () => {
+    const el = document.getElementById('featured-products-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section className="relative min-h-[600px] lg:min-h-[700px] flex items-center overflow-hidden bg-[#F4F6F2] border-b border-[#E5EAE2]">
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+    <section 
+      className="relative min-h-[440px] sm:min-h-[480px] lg:min-h-[510px] w-full flex items-center overflow-hidden border-b border-[#ECE7DD] bg-[#FAF5EE]"
+      style={{
+        backgroundImage: "url('/hero-banner.jpg')",
+        backgroundPosition: 'right 30% center',
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* 
+        Exact Shade Gradient matching reference screenshot:
+        - On desktop: Fades from solid warm cream (#FAF5EE) on the left over the text, 
+          gently tapering into transparency across the center to reveal the artisan platter,
+          burlap jar, lavender soaps, candle and kraft tag on the right.
+        - On mobile: Soft overlay ensuring 100% legibility while keeping the goods visible below.
+      */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to right, #FAF5EE 0%, #FAF5EE 32%, rgba(250, 245, 238, 0.94) 44%, rgba(250, 245, 238, 0.68) 56%, rgba(250, 245, 238, 0.2) 72%, transparent 88%)'
+        }}
+      />
+
+      {/* Mobile-specific additional top-to-bottom soft readability gradient */}
+      <div 
+        className="absolute inset-0 pointer-events-none md:hidden"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(250, 245, 238, 0.95) 0%, rgba(250, 245, 238, 0.88) 55%, rgba(250, 245, 238, 0.3) 100%)'
+        }}
+      />
+
+      {/* Content Container */}
+      <div className="relative z-10 max-w-[1360px] mx-auto px-5 sm:px-8 lg:px-12 w-full py-12 sm:py-16">
+        <div className="max-w-xl lg:max-w-lg space-y-4 sm:space-y-5">
           
-          {/* Left Column: Asymmetric Editorial Typography */}
-          <div className="lg:col-span-7 xl:col-span-7 space-y-6 sm:space-y-8 z-20">
-            
-            {/* Small Label */}
-            <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-wider uppercase text-[#3C4A3E] border border-[#C4D3C2] bg-[#EAF0E6] px-3.5 py-1 rounded-full">
-              <span>CHILLY FLAKES / EVERYDAY LIVING</span>
-            </div>
-
-            {/* Large Editorial Serif Display Heading */}
-            <h1 className="text-4xl sm:text-6xl xl:text-7xl font-serif font-bold text-[#1D251E] leading-[1.08] tracking-tight">
-              Everyday Things. <br />
-              <span className="font-serif italic font-normal text-[#3C4A3E]">A Second Life.</span>
-            </h1>
-
-            {/* Supporting Text */}
-            <p className="text-base sm:text-lg text-[#5F6D61] leading-relaxed max-w-lg font-normal">
-              Discover useful kitchen and household essentials — new, pre-owned and 
-              carefully selected for their next home. Crafted from seasoned wood, 
-              enduring stoneware, and lifelong stainless steel.
-            </p>
-
-            {/* Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <button
-                onClick={() => scrollTo('shop-section', 'All')}
-                className="px-8 py-3.5 bg-[#3C4A3E] hover:bg-[#2C372D] text-white text-xs font-bold tracking-wider uppercase transition-all duration-300 rounded-full shadow-xs hover:-translate-y-0.5 flex items-center gap-2 group"
-              >
-                <span>Shop Collection</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </button>
-
-              <button
-                onClick={() => scrollTo('pre-owned-section')}
-                className="px-7 py-3.5 border border-[#3C4A3E] hover:bg-[#3C4A3E] hover:text-white text-[#3C4A3E] text-xs font-semibold tracking-wider uppercase transition-all duration-300 rounded-full flex items-center gap-2"
-              >
-                <Recycle className="w-3.5 h-3.5" />
-                <span>Explore Pre-Owned</span>
-              </button>
-            </div>
-
-            {/* Small Natural Detail */}
-            <div className="pt-6 border-t border-[#DFE6DD] flex items-center gap-6 text-[11px] text-[#5F6D61] font-medium uppercase tracking-wider">
-              <span>Hand-Inspected Pieces</span>
-              <span className="text-[#3C4A3E]">•</span>
-              <span>Cleaned & Sanitized</span>
-              <span className="text-[#3C4A3E]">•</span>
-              <span>Zero Plastic Waste</span>
-            </div>
-
+          {/* Small tracked uppercase subtitle matching screenshot */}
+          <div className="text-[10px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#63725F] uppercase">
+            {slide.subtitle}
           </div>
 
-          {/* Right Column */}
-          <div className="lg:col-span-5 xl:col-span-5 relative mt-6 lg:mt-0">
-            <div className="relative mx-auto max-w-md lg:max-w-none">
-              
-              <div className="relative rounded-3xl overflow-hidden shadow-card border border-[#DEE5DC] group bg-white">
-                <img
-                  src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1200&q=85"
-                  alt="Wooden kitchen table with utensils, bowls, and soft natural sunlight"
-                  className="w-full h-[460px] sm:h-[520px] object-cover object-center group-hover:scale-103 transition-transform duration-700 ease-out"
-                />
+          {/* 
+            Exact Two-Tone Serif Headline from screenshot:
+            - "Natural Products" in deep forest olive green (#203D26)
+            - "Handmade with Love" in warm earthy terracotta/amber brown (#7B3F1B)
+          */}
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-bold leading-[1.14] tracking-tight">
+            <span className="text-[#203D26] block">
+              {slide.titleLine1}
+            </span>
+            <span className="text-[#7B3F1B] block mt-1">
+              {slide.titleLine2}
+            </span>
+          </h1>
 
-                {/* Overlapping Editorial Badge */}
-                <div className="absolute bottom-5 left-5 right-5 p-4 bg-white/95 backdrop-blur-md border border-[#E5EAE2] text-[#1D251E] rounded-2xl flex items-center justify-between shadow-soft">
-                  <div>
-                    <p className="text-[10px] uppercase font-bold tracking-wider text-[#3C4A3E]">AUTUMN COLLECTION</p>
-                    <p className="font-serif text-sm font-bold text-[#1D251E]">Seasoned Teak & Earthen Stoneware</p>
-                  </div>
-                  <span className="font-mono text-xs font-bold text-[#3C4A3E] bg-[#EAF0E6] px-2 py-0.5 rounded-full">№ 024</span>
-                </div>
-              </div>
+          {/* Descriptive text matching screenshot */}
+          <p className="text-xs sm:text-sm md:text-[14px] text-[#4F5B4E] leading-relaxed max-w-md font-normal">
+            {slide.description}
+          </p>
 
-            </div>
+          {/* Pill Button: Deep forest green with right arrow */}
+          <div className="pt-2">
+            <button
+              onClick={handleShopNow}
+              className="inline-flex items-center gap-2.5 px-7 py-3 bg-[#2D4F32] hover:bg-[#223E27] text-white text-xs sm:text-sm font-medium rounded-full shadow-xs hover:shadow-md transition-all duration-300 group active:scale-98"
+            >
+              <span>{slide.buttonText}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
 
         </div>
       </div>
+
+      {/* 
+        Centered Carousel Dots matching screenshot:
+        Positioned horizontally in the bottom center of the hero section
+      */}
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentSlide(index)}
+            className={`transition-all duration-300 rounded-full ${
+              index === currentSlide
+                ? 'w-3 h-3 bg-[#2D4F32] ring-2 ring-[#2D4F32]/25'
+                : 'w-2.5 h-2.5 bg-white/90 border border-[#D5DDD3] hover:bg-[#2D4F32]/50'
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+
     </section>
   );
 };
+
+export default HeroSection;
