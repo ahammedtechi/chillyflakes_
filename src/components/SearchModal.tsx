@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, ArrowRight, Tag } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { productsApi } from '../api';
+import type { Product } from '../types';
 
 export const SearchModal: React.FC = () => {
-  const { isSearchOpen, setIsSearchOpen, products, setQuickViewProduct } = useStore();
+  const { isSearchOpen, setIsSearchOpen, products, openProductPage } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [apiResults, setApiResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -12,20 +16,45 @@ export const SearchModal: React.FC = () => {
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
       setSearchTerm('');
+      setApiResults([]);
     }
   }, [isSearchOpen]);
 
+  // Live debounced search via Django backend API with local fallback
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setApiResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await productsApi.searchProducts(searchTerm);
+        if (res.data) {
+          setApiResults(res.data);
+        }
+      } catch {
+        // fallback to store products
+        setApiResults(
+          products.filter(
+            (p) =>
+              p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              p.material.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        );
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, products]);
+
   if (!isSearchOpen) return null;
 
-  const results = searchTerm.trim() === ''
-    ? []
-    : products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.material.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.condition.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  const results = apiResults;
 
   const popularSearches = [
     'Wooden Spoon',
@@ -57,6 +86,9 @@ export const SearchModal: React.FC = () => {
               placeholder="Search cookware, ceramics, pre-owned pieces..."
               className="w-full bg-transparent text-sm text-[#1D251E] placeholder-[#7F8F81] focus:outline-none font-medium"
             />
+            {isSearching && (
+              <span className="text-[11px] text-[#7E8F80] shrink-0 animate-pulse">Searching...</span>
+            )}
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
@@ -104,7 +136,7 @@ export const SearchModal: React.FC = () => {
                 <div
                   key={product.id}
                   onClick={() => {
-                    setQuickViewProduct(product);
+                    openProductPage(product);
                     setIsSearchOpen(false);
                   }}
                   className="py-3 px-3 rounded-2xl hover:bg-[#F4F6F2] cursor-pointer flex items-center justify-between gap-4 transition-colors group"

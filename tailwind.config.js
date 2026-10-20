@@ -72,7 +72,7 @@ export default {
         surface: '#FFFFFF',
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', '"Noto Sans Malayalam"', '"Noto Sans Tamil"', '"Noto Sans Devanagari"', '"Noto Sans Kannada"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
       },
       boxShadow: {

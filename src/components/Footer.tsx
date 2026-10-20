@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useStore } from '../context/StoreContext';
 
@@ -122,22 +123,20 @@ export const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a 
-                  href="#privacy" 
-                  onClick={(e) => { e.preventDefault(); alert("Privacy Policy: Your data and checkout are 256-bit SSL encrypted."); }}
+                <Link 
+                  to="/privacy" 
                   className="hover:text-white transition-colors"
                 >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a 
-                  href="#terms" 
-                  onClick={(e) => { e.preventDefault(); alert("Terms & Conditions: Mindful shopping community standards."); }}
+                <Link 
+                  to="/terms" 
                   className="hover:text-white transition-colors"
                 >
                   Terms & Conditions
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

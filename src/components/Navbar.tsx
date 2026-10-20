@@ -14,8 +14,9 @@ export const Navbar: React.FC = () => {
     cartCount, 
     setIsCartOpen, 
     products, 
-    setQuickViewProduct,
-    setSelectedCategory
+    setSelectedCategory,
+    openProductPage,
+    closeProductPage
   } = useStore();
 
   const [searchInput, setSearchInput] = useState('');
@@ -44,12 +45,13 @@ export const Navbar: React.FC = () => {
       ).slice(0, 5);
 
   const handleSelectProduct = (product: any) => {
-    setQuickViewProduct(product);
+    openProductPage(product);
     setShowSuggestions(false);
     setSearchInput('');
   };
 
   const handleCategoryNav = (cat: string) => {
+    closeProductPage();
     setSelectedCategory(cat);
     setShowShopDropdown(false);
     setMobileMenuOpen(false);
@@ -89,6 +91,7 @@ export const Navbar: React.FC = () => {
               href="#" 
               onClick={(e) => {
                 e.preventDefault();
+                closeProductPage();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className="group py-1"
@@ -200,7 +203,7 @@ export const Navbar: React.FC = () => {
 
                 {showShopDropdown && (
                   <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl shadow-xl border border-[#ECE7DD] py-2 z-50">
-                    {['Natural Products', 'Handmade Products', 'Jewelry', 'Clothes & Fashion', 'Home & Living', 'Gifts'].map((cat) => (
+                    {['Natural Products', 'Handmade Products', 'Jewelry', 'Clothes & Fashion', 'Home & Living', 'Retail Products'].map((cat) => (
                       <button
                         key={cat}
                         onClick={() => handleCategoryNav(cat)}

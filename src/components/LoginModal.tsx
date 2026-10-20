@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { authApi } from '../api';
 import { Logo } from './Logo';
 
 export const LoginModal: React.FC = () => {
@@ -8,10 +9,11 @@ export const LoginModal: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [otpStep, setOtpStep] = useState(false);
   const [otpValue, setOtpValue] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isLoginOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) {
       showToast('Please enter your Mobile number or Email ID', 'warning');
@@ -19,16 +21,25 @@ export const LoginModal: React.FC = () => {
     }
 
     if (!otpStep) {
-      setOtpStep(true);
-      showToast('OTP sent to ' + inputValue + '. Enter 1234 to verify.', 'info');
+      setIsSubmitting(true);
+      try {
+        const res = await authApi.sendOtp(inputValue);
+        setOtpStep(true);
+        showToast(res.data?.message || `OTP sent to ${inputValue}. Enter 1234 to verify.`, 'info');
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
-      if (otpValue.trim() === '1234' || otpValue.length === 4) {
-        loginUser(inputValue);
-        setOtpStep(false);
-        setInputValue('');
-        setOtpValue('');
-      } else {
-        showToast('Invalid OTP. Please enter 1234', 'warning');
+      setIsSubmitting(true);
+      try {
+        const success = await loginUser(inputValue, otpValue.trim() || '1234');
+        if (success) {
+          setOtpStep(false);
+          setInputValue('');
+          setOtpValue('');
+        }
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -121,9 +132,10 @@ export const LoginModal: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-[#2E4D34] hover:bg-[#233B27] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs transition-colors"
+                disabled={isSubmitting}
+                className="w-full py-3 bg-[#2E4D34] hover:bg-[#233B27] disabled:bg-[#8F9E8F] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs transition-colors cursor-pointer"
               >
-                {otpStep ? 'Verify & Continue' : 'Request OTP'}
+                {isSubmitting ? 'Please wait...' : otpStep ? 'Verify & Continue' : 'Request OTP'}
               </button>
             </form>
 

@@ -42,6 +42,12 @@ export const CategoryBar: React.FC = () => {
                     <img
                       src={cat.image}
                       alt={cat.name}
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.src.endsWith('/botanical-care-banner.jpg')) {
+                          target.src = '/botanical-care-banner.jpg';
+                        }
+                      }}
                       className="w-full h-full object-cover rounded-full group-hover:scale-108 transition-transform duration-300"
                     />
                   </div>

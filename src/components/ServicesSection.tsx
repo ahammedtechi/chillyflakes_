@@ -1,108 +1,249 @@
-import React, { useState } from 'react';
-import { ArrowRight, CheckCircle2, Clock, X, ShieldCheck, Sparkles } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { 
+  ArrowRight, 
+  CheckCircle2, 
+  Clock, 
+  X, 
+  ShieldCheck, 
+  Sparkles, 
+  Search, 
+  Star, 
+  Calendar 
+} from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { servicesApi } from '../api';
 
-interface ServiceItem {
+export interface ServiceItem {
   id: string;
   title: string;
   subtitle: string;
+  category: 'Wellness' | 'Home' | 'Crafts' | 'Education';
   description: string;
   duration: string;
   price: string;
+  rating: number;
+  reviewsCount: number;
   image: string;
 }
 
-const servicesData: ServiceItem[] = [
+export const servicesData: ServiceItem[] = [
   // Layer 1: Screenshot Row
   {
     id: 'srv-massage',
     title: 'Massage Therapy',
     subtitle: 'Relax & Rejuvenate',
+    category: 'Wellness',
     description: 'Therapeutic deep-tissue and Swedish massage with cold-pressed botanical essential oils. Relieves muscle tension and restores full-body tranquility.',
     duration: '60 - 90 mins',
     price: 'From CAD $75.00',
+    rating: 5.0,
+    reviewsCount: 38,
     image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'srv-beauty',
     title: 'Beauty & Skincare',
     subtitle: 'Look & Feel Your Best',
+    category: 'Wellness',
     description: 'Organic botanical facials, all-natural micro-exfoliation, and custom herbal masks formulated for sensitive and dry skin types.',
     duration: '45 - 60 mins',
     price: 'From CAD $55.00',
+    rating: 4.9,
+    reviewsCount: 42,
     image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'srv-tutoring',
     title: 'Tutoring',
     subtitle: 'Learn & Grow',
+    category: 'Education',
     description: 'Personalized 1-on-1 and small group academic tutoring in STEM, languages, and creative writing led by certified educators.',
     duration: '60 mins per session',
     price: 'From CAD $40.00 / hr',
+    rating: 4.9,
+    reviewsCount: 29,
     image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'srv-cleaning',
     title: 'Home Cleaning',
     subtitle: 'A Cleaner, Healthier Home',
+    category: 'Home',
     description: 'Eco-friendly, chemical-free home sanitation using natural plant-derived cleaners. Safe for children, pets, and the planet.',
     duration: '2 - 4 hours',
     price: 'From CAD $90.00',
+    rating: 5.0,
+    reviewsCount: 51,
     image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80',
   },
 
-  // Layer 2: Second Requested Feature Layer (Same Design, Different Services)
+  // Layer 2: Second Row
   {
     id: 'srv-pottery',
     title: 'Pottery Workshop',
     subtitle: 'Craft & Create',
+    category: 'Crafts',
     description: 'Hands-on wheel-throwing and ceramic sculpture classes guided by resident clay artisans. All materials, firing, and glazing included.',
     duration: '2 hours',
     price: 'From CAD $65.00',
+    rating: 5.0,
+    reviewsCount: 34,
     image: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'srv-yoga',
     title: 'Yoga & Mindfulness',
     subtitle: 'Mind, Body & Spirit',
+    category: 'Wellness',
     description: 'Restorative Hatha & Vinyasa flow sessions combined with guided breathwork and sound healing for mental clarity and inner balance.',
     duration: '60 - 75 mins',
     price: 'From CAD $30.00',
+    rating: 4.8,
+    reviewsCount: 27,
     image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'srv-plant-styling',
     title: 'Plant Care & Styling',
     subtitle: 'Living Green Spaces',
+    category: 'Home',
     description: 'Custom botanical interior consultation, organic repotting, pest diagnosis, and seasonal greenery curation for homes and offices.',
     duration: '90 mins',
     price: 'From CAD $50.00',
+    rating: 4.9,
+    reviewsCount: 19,
     image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'srv-wood-restoration',
     title: 'Wood Restoration',
     subtitle: 'Revitalize & Preserve',
+    category: 'Home',
     description: 'Expert repair and rejuvenation of antique teak, oak, and rosewood furniture with natural shellac and beeswax finishes.',
     duration: 'Consultation & Service',
     price: 'From CAD $85.00',
+    rating: 5.0,
+    reviewsCount: 22,
     image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80',
   },
+
+  // Extended Catalog in All Services Directory
+  {
+    id: 'srv-candle-making',
+    title: 'Candle & Scent Making',
+    subtitle: 'Aromatherapy Crafts',
+    category: 'Crafts',
+    description: 'Blend your own signature botanical soy candle with pure therapeutic essential oils, wood wicks, and reusable amber vessels.',
+    duration: '90 mins',
+    price: 'From CAD $45.00',
+    rating: 4.9,
+    reviewsCount: 18,
+    image: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    id: 'srv-fitness',
+    title: 'Movement & Wellness Coaching',
+    subtitle: 'Holistic Strength',
+    category: 'Wellness',
+    description: 'One-on-one tailored mobility, functional strength training, and gentle posture correction for everyday vitality.',
+    duration: '60 mins',
+    price: 'From CAD $50.00',
+    rating: 4.9,
+    reviewsCount: 25,
+    image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    id: 'srv-photography',
+    title: 'Lifestyle & Portrait Photography',
+    subtitle: 'Cherished Memories',
+    category: 'Education',
+    description: 'Natural light portraiture, artisan brand storytelling, and family celebration photo sessions captured with warm earthy aesthetics.',
+    duration: '90 - 120 mins',
+    price: 'From CAD $120.00',
+    rating: 5.0,
+    reviewsCount: 31,
+    image: 'https://images.unsplash.com/photo-1554080353-a576cf803bda?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    id: 'srv-tailoring',
+    title: 'Eco Tailoring & Alterations',
+    subtitle: 'Sustainable Wardrobe',
+    category: 'Home',
+    description: 'Mending, resizing, and custom repairs of heirloom linen, cotton, and wool garments to extend your wardrobe lifecycle sustainably.',
+    duration: '2 - 3 days turnaround',
+    price: 'From CAD $25.00',
+    rating: 4.8,
+    reviewsCount: 16,
+    image: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=600&q=80',
+  }
 ];
 
 export const ServicesSection: React.FC = () => {
   const { showToast } = useStore();
+  const [allServices, setAllServices] = useState<ServiceItem[]>(servicesData);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [isAllServicesOpen, setIsAllServicesOpen] = useState(false);
+  const [modalCategory, setModalCategory] = useState<string>('All');
+  const [modalSearch, setModalSearch] = useState<string>('');
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
-  const handleBookService = (e: React.FormEvent) => {
+  // Form states for booking
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingTime, setBookingTime] = useState('10:00 AM');
+  const [userName, setUserName] = useState('');
+  const [userContact, setUserContact] = useState('');
+
+  // Fetch community services from Django API on mount
+  useEffect(() => {
+    servicesApi.getServices().then((res) => {
+      if (res.data && res.data.length > 0) {
+        setAllServices(res.data);
+      }
+    });
+  }, []);
+
+  // 8 Service Cards for the page grid matching screenshot
+  const displayedServices = allServices.slice(0, 8);
+
+  // Filtering for All Services Modal
+  const modalFilteredServices = useMemo(() => {
+    return allServices.filter((s) => {
+      const matchesCategory = modalCategory === 'All' || s.category === modalCategory;
+      const matchesSearch =
+        modalSearch.trim() === '' ||
+        s.title.toLowerCase().includes(modalSearch.toLowerCase()) ||
+        s.subtitle.toLowerCase().includes(modalSearch.toLowerCase()) ||
+        s.description.toLowerCase().includes(modalSearch.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [allServices, modalCategory, modalSearch]);
+
+  const handleBookService = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBookingConfirmed(true);
-    showToast(`Appointment requested for ${selectedService?.title}! Our team will contact you shortly.`, 'success');
-    setTimeout(() => {
-      setSelectedService(null);
-      setBookingConfirmed(false);
-    }, 2200);
+    if (!selectedService) return;
+
+    try {
+      const res = await servicesApi.createBooking({
+        serviceId: selectedService.id,
+        serviceTitle: selectedService.title,
+        userName,
+        userContact,
+        preferredDate: bookingDate,
+        preferredTime: bookingTime,
+      });
+
+      setBookingConfirmed(true);
+      showToast(res.data?.message || `Appointment requested for ${selectedService.title}!`, 'success');
+      setTimeout(() => {
+        setSelectedService(null);
+        setBookingConfirmed(false);
+        setBookingDate('');
+        setUserName('');
+        setUserContact('');
+      }, 2000);
+    } catch {
+      showToast('Could not submit booking. Please try again.', 'warning');
+    }
   };
 
   return (
@@ -111,7 +252,7 @@ export const ServicesSection: React.FC = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           
-          {/* Left Column: Heading "Services" & Description matching user request */}
+          {/* Left Column: Heading "Services" & Description matching user screenshot */}
           <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-28">
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#223B28] tracking-tight">
               Services
@@ -137,8 +278,8 @@ export const ServicesSection: React.FC = () => {
 
             <div className="pt-3">
               <button
-                onClick={() => setSelectedService(servicesData[0])}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#2E4D34] hover:bg-[#233B27] text-white text-xs sm:text-sm font-medium rounded-full shadow-xs transition-all duration-300 group"
+                onClick={() => setIsAllServicesOpen(true)}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#2E4D34] hover:bg-[#233B27] text-white text-xs sm:text-sm font-medium rounded-full shadow-xs hover:shadow-md transition-all duration-300 group active:scale-98 cursor-pointer"
               >
                 <span>Browse Services</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -146,12 +287,23 @@ export const ServicesSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: 2 Layers of Service Cards (4 per row on desktop, 2 per row on mobile) */}
-          <div className="lg:col-span-8 space-y-5 sm:space-y-6">
+          {/* Right Column: Service Cards Grid */}
+          <div className="lg:col-span-8">
             
-            {/* Layer 1 (Original Row) & Layer 2 (Requested Second Row) in a clean 4-column grid */}
+            {/* View All Services Link above service cards */}
+            <div className="flex justify-end pb-3">
+              <button
+                onClick={() => setIsAllServicesOpen(true)}
+                className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#2D3A2F] hover:text-[#2E4D34] transition-colors cursor-pointer"
+              >
+                <span>View All Services</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-[#2E4D34]" />
+              </button>
+            </div>
+
+            {/* 4-Column Service Cards Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-5">
-              {servicesData.map((service) => (
+              {displayedServices.map((service) => (
                 <div
                   key={service.id}
                   onClick={() => setSelectedService(service)}
@@ -169,7 +321,7 @@ export const ServicesSection: React.FC = () => {
                     />
                   </div>
 
-                  {/* Service Info matching screenshot */}
+                  {/* Service Info matching user screenshot */}
                   <div className="p-3 sm:p-3.5 text-center flex-grow flex flex-col justify-center">
                     <h3 className="font-semibold text-xs sm:text-sm text-[#223B28] group-hover:text-[#2E4D34] transition-colors line-clamp-1">
                       {service.title}
@@ -188,7 +340,170 @@ export const ServicesSection: React.FC = () => {
 
       </div>
 
-      {/* Interactive Service Detail & Booking Modal */}
+      {/* ========================================================
+          FULL "ALL SERVICES DIRECTORY" MODAL
+          Allows viewing all services with search & category filtering
+          ======================================================== */}
+      {isAllServicesOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsAllServicesOpen(false)}
+          />
+
+          <div className="flex min-h-full items-center justify-center p-3 sm:p-6">
+            <div className="relative bg-[#FAF7F2] rounded-3xl max-w-4xl w-full p-5 sm:p-8 shadow-2xl border border-[#ECE7DD] text-[#223B28] my-8 max-h-[90vh] flex flex-col">
+              
+              {/* Modal Header */}
+              <div className="flex items-start justify-between pb-4 border-b border-[#ECE7DD]">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#223B28]">
+                      All Community Services
+                    </h2>
+                    <span className="bg-[#EAF2E9] text-[#2E4D34] text-xs font-semibold px-2.5 py-0.5 rounded-full border border-[#CDE1CB]">
+                      {servicesData.length} Available
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-[#556956] mt-1">
+                    Connect with certified local practitioners, artisans, and verified community experts.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsAllServicesOpen(false)}
+                  className="p-2 text-[#7E8F80] hover:text-[#223B28] rounded-full hover:bg-white transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Search & Category Filter Controls */}
+              <div className="py-4 space-y-3">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-[#7E8F80] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={modalSearch}
+                    onChange={(e) => setModalSearch(e.target.value)}
+                    placeholder="Search services (e.g. massage, tutoring, yoga, cleaning)..."
+                    className="w-full pl-10 pr-4 py-2 bg-white rounded-xl text-xs sm:text-sm border border-[#ECE7DD] focus:outline-none focus:border-[#2E4D34] focus:ring-1 focus:ring-[#2E4D34]"
+                  />
+                  {modalSearch && (
+                    <button 
+                      onClick={() => setModalSearch('')} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7E8F80] hover:text-[#223B28]"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+                  {[
+                    { label: 'All Services', value: 'All' },
+                    { label: 'Wellness & Health', value: 'Wellness' },
+                    { label: 'Home & Living', value: 'Home' },
+                    { label: 'Crafts & Workshops', value: 'Crafts' },
+                    { label: 'Education & Tutoring', value: 'Education' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.value}
+                      onClick={() => setModalCategory(cat.value)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex-shrink-0 cursor-pointer ${
+                        modalCategory === cat.value
+                          ? 'bg-[#2E4D34] text-white shadow-xs'
+                          : 'bg-white text-[#506052] border border-[#ECE7DD] hover:border-[#2E4D34] hover:text-[#2E4D34]'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Scrollable Services Grid inside Modal */}
+              <div className="overflow-y-auto pr-1 flex-grow space-y-4">
+                {modalFilteredServices.length === 0 ? (
+                  <div className="py-12 text-center text-[#7E8F80]">
+                    <p className="text-sm">No services found matching "{modalSearch}".</p>
+                    <button 
+                      onClick={() => { setModalSearch(''); setModalCategory('All'); }} 
+                      className="mt-2 text-xs text-[#2E4D34] underline"
+                    >
+                      Reset filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {modalFilteredServices.map((service) => (
+                      <div
+                        key={service.id}
+                        onClick={() => setSelectedService(service)}
+                        className="group bg-white rounded-2xl overflow-hidden border border-[#ECE7DD] hover:border-[#C4D5C2] transition-all duration-300 hover:shadow-lg flex flex-col justify-between cursor-pointer"
+                      >
+                        <div className="aspect-[16/10] overflow-hidden bg-[#F6F3EC] relative">
+                          <img
+                            src={service.image}
+                            alt={service.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <span className="absolute top-2.5 left-2.5 bg-white/95 text-[#2E4D34] text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                            {service.category}
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 flex flex-col flex-grow justify-between">
+                          <div>
+                            <div className="flex items-center justify-between gap-1">
+                              <h4 className="font-semibold text-sm text-[#223B28] group-hover:text-[#2E4D34]">
+                                {service.title}
+                              </h4>
+                              <div className="flex items-center gap-0.5 text-[#E5A024] text-[11px] font-semibold">
+                                <Star className="w-3 h-3 fill-current text-[#E5A024]" />
+                                <span>{service.rating}</span>
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-[#6C7B6D] mt-0.5">
+                              {service.subtitle}
+                            </p>
+                            <p className="text-xs text-[#506052] mt-2 line-clamp-2 leading-relaxed">
+                              {service.description}
+                            </p>
+                          </div>
+
+                          <div className="mt-3 pt-2.5 border-t border-[#F2ECE1] flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#2E4D34]">
+                              {service.price}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedService(service);
+                              }}
+                              className="px-3 py-1 bg-[#2E4D34] hover:bg-[#223E27] text-white text-xs font-medium rounded-lg transition-colors cursor-pointer"
+                            >
+                              Book Now
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          INTERACTIVE SERVICE DETAIL & BOOKING MODAL
+          ======================================================== */}
       {selectedService && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div 
@@ -200,7 +515,7 @@ export const ServicesSection: React.FC = () => {
               
               <button
                 onClick={() => setSelectedService(null)}
-                className="absolute top-4 right-4 p-2 text-[#7E8F80] hover:text-[#223B28] rounded-full hover:bg-[#FAF7F2]"
+                className="absolute top-4 right-4 p-2 text-[#7E8F80] hover:text-[#223B28] rounded-full hover:bg-[#FAF7F2] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -228,40 +543,69 @@ export const ServicesSection: React.FC = () => {
                   <span>Your booking request has been submitted successfully!</span>
                 </div>
               ) : (
-                <form onSubmit={handleBookService} className="mt-6 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                <form onSubmit={handleBookService} className="mt-6 space-y-3 pt-3 border-t border-[#ECE7DD]">
+                  <p className="text-xs font-semibold text-[#223B28]">Request an Appointment:</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-semibold text-[#506052] uppercase">Preferred Date</label>
+                      <label className="text-[11px] text-[#6C7B6D] block mb-1">Your Full Name</label>
                       <input 
-                        type="date" 
+                        type="text" 
                         required 
-                        defaultValue={new Date().toISOString().split('T')[0]} 
-                        className="w-full mt-1 px-3 py-2 border border-[#ECE7DD] rounded-xl text-xs focus:outline-none focus:border-[#2E4D34]" 
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        placeholder="e.g. Sarah Jenkins"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECE7DD] focus:outline-none focus:border-[#2E4D34]"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-semibold text-[#506052] uppercase">Preferred Time</label>
-                      <select className="w-full mt-1 px-3 py-2 border border-[#ECE7DD] rounded-xl text-xs focus:outline-none focus:border-[#2E4D34] bg-white">
-                        <option>Morning (10:00 AM)</option>
-                        <option>Afternoon (2:00 PM)</option>
-                        <option>Evening (5:30 PM)</option>
+                      <label className="text-[11px] text-[#6C7B6D] block mb-1">Phone or Email</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={userContact}
+                        onChange={(e) => setUserContact(e.target.value)}
+                        placeholder="sarah@example.com"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECE7DD] focus:outline-none focus:border-[#2E4D34]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-[#6C7B6D] block mb-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-[#2E4D34]" /> Preferred Date
+                      </label>
+                      <input 
+                        type="date" 
+                        required 
+                        value={bookingDate}
+                        onChange={(e) => setBookingDate(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECE7DD] focus:outline-none focus:border-[#2E4D34]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-[#6C7B6D] block mb-1 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-[#2E4D34]" /> Preferred Time
+                      </label>
+                      <select 
+                        value={bookingTime}
+                        onChange={(e) => setBookingTime(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECE7DD] focus:outline-none focus:border-[#2E4D34]"
+                      >
+                        <option>Morning (09:00 AM - 12:00 PM)</option>
+                        <option>Afternoon (12:00 PM - 03:00 PM)</option>
+                        <option>Evening (03:00 PM - 06:00 PM)</option>
+                        <option>Weekend Special Slot</option>
                       </select>
                     </div>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-semibold text-[#506052] uppercase">Your Name & Phone / Email</label>
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="e.g. Maya Sharma (+1 / +91)" 
-                      className="w-full mt-1 px-3 py-2 border border-[#ECE7DD] rounded-xl text-xs focus:outline-none focus:border-[#2E4D34]" 
-                    />
-                  </div>
+
                   <button
                     type="submit"
-                    className="w-full py-3 bg-[#2E4D34] hover:bg-[#233B27] text-white text-xs font-semibold rounded-xl transition-colors mt-2"
+                    className="w-full py-2.5 mt-2 bg-[#2E4D34] hover:bg-[#233B27] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
                   >
-                    Request Booking Now
+                    Confirm Booking Request
                   </button>
                 </form>
               )}
@@ -270,6 +614,7 @@ export const ServicesSection: React.FC = () => {
           </div>
         </div>
       )}
+
     </section>
   );
 };

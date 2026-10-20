@@ -8,11 +8,14 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addToCart, toggleWishlist, isInWishlist, setQuickViewProduct } = useStore();
+  const { addToCart, toggleWishlist, isInWishlist, openProductPage } = useStore();
   const isWishlisted = isInWishlist(product.id);
 
   return (
-    <div className="group bg-[#FFFDFD] text-[#1D251E] rounded-3xl border border-[#EDE3DE] hover:border-[#D82C20]/50 hover:shadow-card-chilly transition-all duration-300 p-3.5 sm:p-4 flex flex-col justify-between relative">
+    <div 
+      onClick={() => openProductPage(product)}
+      className="group bg-[#FFFDFD] text-[#1D251E] rounded-3xl border border-[#EDE3DE] hover:border-[#2D4F32]/50 hover:shadow-card-chilly transition-all duration-300 p-3.5 sm:p-4 flex flex-col justify-between relative cursor-pointer"
+    >
       
       {/* Top Image Box with Subtle Soft Warm Pad */}
       <div className="relative aspect-square w-full mb-3 flex items-center justify-center p-3 bg-[#FAF7F6] rounded-2xl overflow-hidden border border-[#F3EAE8]">
@@ -36,15 +39,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-[#D82C20] text-[#D82C20]' : 'text-[#8C6D65] hover:text-[#D82C20]'}`} />
         </button>
 
-        {/* Quick View Button */}
+        {/* View Details Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
-            setQuickViewProduct(product);
+            openProductPage(product);
           }}
-          className="absolute bottom-2.5 right-2.5 p-2 rounded-full bg-white text-[#1D251E] hover:text-[#D82C20] shadow-sm transition-all opacity-0 group-hover:opacity-100 z-10 hover:scale-105"
-          title="Quick View"
-          aria-label="Quick View"
+          className="absolute bottom-2.5 right-2.5 p-2 rounded-full bg-white text-[#1D251E] hover:text-[#2D4F32] shadow-sm transition-all opacity-0 group-hover:opacity-100 z-10 hover:scale-105"
+          title="View Details"
+          aria-label="View Details"
         >
           <Eye className="w-3.5 h-3.5" />
         </button>
@@ -71,8 +74,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           {/* Title */}
           <h3 
-            onClick={() => setQuickViewProduct(product)}
-            className="text-xs sm:text-sm font-semibold text-[#1D251E] group-hover:text-[#D82C20] transition-colors line-clamp-2 leading-snug cursor-pointer pt-0.5"
+            className="text-xs sm:text-sm font-semibold text-[#1D251E] group-hover:text-[#2D4F32] transition-colors line-clamp-2 leading-snug pt-0.5"
             title={product.name}
           >
             {product.name}

@@ -1,99 +1,100 @@
-import React, { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
+import { heroApi, type HeroSlideData } from '../api';
 
-interface HeroSlide {
-  id: string;
-  subtitle: string;
-  titleLine1: string;
-  titleLine2: string;
-  description: string;
-  buttonText: string;
-}
+export const HeroSection: React.FC = () => {
+  const [slides, setSlides] = useState<HeroSlideData[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const { setSelectedCategory } = useStore();
 
-const slides: HeroSlide[] = [
-  {
+  // Load hero slides from Django backend API (with default fallback)
+  useEffect(() => {
+    heroApi.getHeroSlides().then((res) => {
+      if (res.data && res.data.length > 0) {
+        setSlides(res.data);
+      }
+    });
+  }, []);
+
+  const slide = slides[currentSlide] || slides[0] || {
     id: 'slide-1',
     subtitle: 'WELCOME TO CHILLYFLAKES',
     titleLine1: 'Natural Products',
     titleLine2: 'Handmade with Love',
-    description: 'Discover unique, eco-friendly products, beautiful jewelry, fashionable clothes, home décor and professional services — all from talented local sellers.',
+    description: 'Discover unique, eco-friendly products and handcrafted finds.',
     buttonText: 'Shop Now',
-  },
-  {
-    id: 'slide-2',
-    subtitle: 'MINDFUL ARTISAN GOODS',
-    titleLine1: 'Artisan Kitchen',
-    titleLine2: 'Crafted with Passion',
-    description: 'Carefully seasoned cookware, hand-carved teak spoons, and stone ceramics crafted to nourish your everyday home rituals.',
-    buttonText: 'Explore Collection',
-  },
-  {
-    id: 'slide-3',
-    subtitle: 'PURE BOTANICAL CARE',
-    titleLine1: 'Organic Self-Care',
-    titleLine2: 'Pure Botanical Touch',
-    description: 'Cold-pressed botanical oils, lavender artisanal soaps, and pure soy candles blended with zero toxic additives.',
-    buttonText: 'Discover Wellness',
-  }
-];
+    image: '/hero-banner.jpg',
+    category: 'All',
+    backgroundPosition: 'right 30% center',
+  };
 
-export const HeroSection: React.FC = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  // Automatic infinite looping carousel (uninterrupted continuous loop every 5 seconds)
+  useEffect(() => {
+    if (slides.length <= 1) return;
 
-  const slide = slides[currentSlide];
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
 
-  const handleShopNow = () => {
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const handlePrevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  const handleNextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const handleButtonClick = () => {
+    if (slide.category === 'Services') {
+      const el = document.getElementById('services-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (slide.category && slide.category !== 'All') {
+      setSelectedCategory(slide.category);
+    }
     const el = document.getElementById('featured-products-section');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
     <section 
-      className="relative min-h-[440px] sm:min-h-[480px] lg:min-h-[510px] w-full flex items-center overflow-hidden border-b border-[#ECE7DD] bg-[#FAF5EE]"
-      style={{
-        backgroundImage: "url('/hero-banner.jpg')",
-        backgroundPosition: 'right 30% center',
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-      }}
+      className="group relative min-h-[440px] sm:min-h-[480px] lg:min-h-[520px] w-full flex items-center overflow-hidden border-b border-[#ECE7DD] bg-[#FAF5EE]"
     >
-      {/* 
-        Exact Shade Gradient matching reference screenshot:
-        - On desktop: Fades from solid warm cream (#FAF5EE) on the left over the text, 
-          gently tapering into transparency across the center to reveal the artisan platter,
-          burlap jar, lavender soaps, candle and kraft tag on the right.
-        - On mobile: Soft overlay ensuring 100% legibility while keeping the goods visible below.
-      */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(to right, #FAF5EE 0%, #FAF5EE 32%, rgba(250, 245, 238, 0.94) 44%, rgba(250, 245, 238, 0.68) 56%, rgba(250, 245, 238, 0.2) 72%, transparent 88%)'
-        }}
-      />
+      {/* Background Slides with Cross-Fade Transition */}
+      {slides.map((s, index) => (
+        <div
+          key={s.id}
+          className={`absolute inset-0 bg-cover bg-no-repeat transition-opacity duration-1000 ease-in-out pointer-events-none ${
+            index === currentSlide ? 'opacity-100 z-0 scale-100' : 'opacity-0 z-[-1] scale-105'
+          }`}
+          style={{
+            backgroundImage: `url('${s.image}')`,
+            backgroundPosition: s.backgroundPosition || 'right 30% center',
+            transition: 'opacity 1000ms ease-in-out, transform 8000ms ease-out',
+          }}
+        />
+      ))}
 
-      {/* Mobile-specific additional top-to-bottom soft readability gradient */}
-      <div 
-        className="absolute inset-0 pointer-events-none md:hidden"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(250, 245, 238, 0.95) 0%, rgba(250, 245, 238, 0.88) 55%, rgba(250, 245, 238, 0.3) 100%)'
-        }}
-      />
-
-      {/* Content Container */}
+      {/* Content Container (Left-aligned plain text with smooth fade transition) */}
       <div className="relative z-10 max-w-[1360px] mx-auto px-5 sm:px-8 lg:px-12 w-full py-12 sm:py-16">
         <div className="max-w-xl lg:max-w-lg space-y-4 sm:space-y-5">
           
-          {/* Small tracked uppercase subtitle matching screenshot */}
-          <div className="text-[10px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#63725F] uppercase">
+          {/* Small tracked uppercase subtitle */}
+          <div className="text-[10px] sm:text-[11px] font-semibold tracking-[0.22em] text-[#63725F] uppercase transition-all duration-500">
             {slide.subtitle}
           </div>
 
           {/* 
-            Exact Two-Tone Serif Headline from screenshot:
-            - "Natural Products" in deep forest olive green (#203D26)
-            - "Handmade with Love" in warm earthy terracotta/amber brown (#7B3F1B)
+            Two-Tone Serif Headline:
+            - Line 1 in deep forest olive green (#203D26)
+            - Line 2 in warm earthy terracotta/amber brown (#7B3F1B)
           */}
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-bold leading-[1.14] tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-bold leading-[1.14] tracking-tight transition-all duration-500">
             <span className="text-[#203D26] block">
               {slide.titleLine1}
             </span>
@@ -102,16 +103,16 @@ export const HeroSection: React.FC = () => {
             </span>
           </h1>
 
-          {/* Descriptive text matching screenshot */}
-          <p className="text-xs sm:text-sm md:text-[14px] text-[#4F5B4E] leading-relaxed max-w-md font-normal">
+          {/* Descriptive text */}
+          <p className="text-xs sm:text-sm md:text-[14px] text-[#4F5B4E] leading-relaxed max-w-md font-normal transition-all duration-500">
             {slide.description}
           </p>
 
           {/* Pill Button: Deep forest green with right arrow */}
           <div className="pt-2">
             <button
-              onClick={handleShopNow}
-              className="inline-flex items-center gap-2.5 px-7 py-3 bg-[#2D4F32] hover:bg-[#223E27] text-white text-xs sm:text-sm font-medium rounded-full shadow-xs hover:shadow-md transition-all duration-300 group active:scale-98"
+              onClick={handleButtonClick}
+              className="inline-flex items-center gap-2.5 px-7 py-3 bg-[#2D4F32] hover:bg-[#223E27] text-white text-xs sm:text-sm font-medium rounded-full shadow-xs hover:shadow-md transition-all duration-300 group active:scale-98 cursor-pointer"
             >
               <span>{slide.buttonText}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -121,19 +122,35 @@ export const HeroSection: React.FC = () => {
         </div>
       </div>
 
+      {/* Arrow Controls: Previous / Next (Fade in on hover or visible on desktop) */}
+      <button
+        onClick={handlePrevSlide}
+        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/85 hover:bg-white text-[#203D26] shadow-sm hover:shadow-md border border-[#ECE7DD] flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+        aria-label="Previous Slide"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+
+      <button
+        onClick={handleNextSlide}
+        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/85 hover:bg-white text-[#203D26] shadow-sm hover:shadow-md border border-[#ECE7DD] flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
+        aria-label="Next Slide"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
+
       {/* 
-        Centered Carousel Dots matching screenshot:
-        Positioned horizontally in the bottom center of the hero section
+        Centered Carousel Dots with Loop Indicators
       */}
       <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`transition-all duration-300 rounded-full ${
+            className={`transition-all duration-300 rounded-full cursor-pointer ${
               index === currentSlide
-                ? 'w-3 h-3 bg-[#2D4F32] ring-2 ring-[#2D4F32]/25'
-                : 'w-2.5 h-2.5 bg-white/90 border border-[#D5DDD3] hover:bg-[#2D4F32]/50'
+                ? 'w-6 sm:w-8 h-2.5 bg-[#2D4F32] shadow-xs'
+                : 'w-2.5 h-2.5 bg-white/85 border border-[#D5DDD3] hover:bg-[#2D4F32]/50'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />

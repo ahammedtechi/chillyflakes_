@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Sprout, ShoppingBag } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -39,13 +40,12 @@ export const AnnouncementBar: React.FC = () => {
                 Register
               </button>
               <span className="text-[#527357] hidden md:inline">|</span>
-              <a 
-                href="#seller" 
-                onClick={(e) => { e.preventDefault(); alert("Become a Seller: Partner with ChillyFlakes to reach conscious consumers nationwide!"); }}
+              <Link 
+                to="/vendor/register" 
                 className="hover:text-white transition-colors hover:underline hidden md:inline"
               >
                 Become a Seller
-              </a>
+              </Link>
             </div>
           )}
 

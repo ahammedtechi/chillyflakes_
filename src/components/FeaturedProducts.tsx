@@ -1,20 +1,17 @@
 import React from 'react';
 import { Star, ArrowRight, Eye } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useDailyProducts } from '../utils/dailyRotation';
 import type { Product } from '../types';
 
 export const FeaturedProducts: React.FC = () => {
-  const { products, addToCart, setQuickViewProduct, showToast, selectedCategory, setSelectedCategory } = useStore();
+  const { products, addToCart, openProductPage, showToast, selectedCategory, setSelectedCategory } = useStore();
 
-  // Layer 1: First 5 products (Screenshot row)
-  const featuredRowProducts = selectedCategory === 'All' || selectedCategory === 'Services'
-    ? products.slice(0, 5)
-    : products.filter(p => p.category === selectedCategory).slice(0, 5);
-
-  // Layer 2: Second 5 products (Different products, exact same card design)
-  const trendingRowProducts = selectedCategory === 'All' || selectedCategory === 'Services'
-    ? products.slice(5, 10)
-    : products.filter(p => p.category === selectedCategory).slice(5, 10);
+  // Daily Rotated Products (Automatically refreshes every day at midnight with distinct category selection)
+  const { featured: featuredRowProducts, trending: trendingRowProducts } = useDailyProducts(
+    products,
+    selectedCategory
+  );
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
@@ -36,6 +33,9 @@ export const FeaturedProducts: React.FC = () => {
     if (product.name.includes('Tote')) return 'Handwoven | Eco-friendly';
     if (product.name.includes('Salts')) return 'Organic Mineral | Relaxing';
     if (product.name.includes('Board')) return 'Seasoned Wood | Kitchen & Table';
+    if (product.name.includes('Oil')) return 'Single Estate | Cold-Pressed';
+    if (product.name.includes('Tea')) return 'Organic Herbal | Caffeine-Free';
+    if (product.name.includes('Granola')) return 'Artisan Pantry | 100% Organic';
     return '100% Natural | Handmade';
   };
 
@@ -45,7 +45,7 @@ export const FeaturedProducts: React.FC = () => {
     return (
       <div
         key={product.id}
-        onClick={() => setQuickViewProduct(product)}
+        onClick={() => openProductPage(product)}
         className="group bg-white rounded-2xl overflow-hidden border border-[#ECE7DD] hover:border-[#C6D5C5] transition-all duration-300 hover:shadow-lg flex flex-col justify-between cursor-pointer"
       >
         {/* Product Image */}
@@ -54,15 +54,20 @@ export const FeaturedProducts: React.FC = () => {
             src={product.image}
             alt={product.name}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80';
+              const target = e.target as HTMLImageElement;
+              if (product.additionalImages && product.additionalImages.length > 1 && target.src !== product.additionalImages[1]) {
+                target.src = product.additionalImages[1];
+              } else {
+                target.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80';
+              }
             }}
             className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
           />
 
-          {/* Quick View Button on Hover */}
+          {/* View Details Indicator on Hover */}
           <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
             <span className="bg-white/95 text-[#2E4D34] text-xs font-semibold py-1.5 px-3 rounded-full shadow-sm flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5" /> Quick View
+              <Eye className="w-3.5 h-3.5" /> View Details
             </span>
           </div>
         </div>
@@ -131,7 +136,7 @@ export const FeaturedProducts: React.FC = () => {
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#223B28] tracking-tight">
                 Featured Products
               </h2>
-              {selectedCategory !== 'All' && selectedCategory !== 'Services' && (
+              {selectedCategory !== 'All' && selectedCategory !== 'Services' ? (
                 <p className="text-xs text-[#556956] mt-1">
                   Showing items in <span className="font-semibold text-[#2E4D34]">{selectedCategory}</span> &bull;{' '}
                   <button 
@@ -140,6 +145,10 @@ export const FeaturedProducts: React.FC = () => {
                   >
                     View all
                   </button>
+                </p>
+              ) : (
+                <p className="text-xs text-[#6C7B6D] mt-0.5">
+                  Today's curated handpicked selection
                 </p>
               )}
             </div>
@@ -177,7 +186,7 @@ export const FeaturedProducts: React.FC = () => {
                   Trending Handcrafted Finds
                 </h2>
                 <p className="text-xs text-[#556956] mt-0.5">
-                  Artisan creations loved by our mindful community
+                  Today's artisan spotlight &bull; Handcrafted discoveries from local makers
                 </p>
               </div>
 

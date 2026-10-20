@@ -25,6 +25,7 @@ export interface Product {
 export interface Category {
   id: string;
   name: string;
+  i18nKey?: string;
   iconName: string;
   productCount: number;
   image: string;

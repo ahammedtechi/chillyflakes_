@@ -1,20 +1,31 @@
 import React, { useState } from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { newsletterApi } from '../api';
 
 export const Newsletter: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
       showToast('Please enter a valid email address', 'warning');
       return;
     }
-    setIsSubscribed(true);
-    showToast('You are subscribed to the Chilly Flakes journal.', 'success');
+
+    setIsSubmitting(true);
+    try {
+      const res = await newsletterApi.subscribe(email);
+      setIsSubscribed(true);
+      showToast(res.data?.message || 'You are subscribed to the Chilly Flakes journal.', 'success');
+    } catch {
+      showToast('Subscription error. Please try again.', 'warning');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -56,9 +67,10 @@ export const Newsletter: React.FC = () => {
               />
               <button
                 type="submit"
-                className="px-7 py-3.5 bg-[#3C4A3E] hover:bg-[#2C372D] text-white text-xs font-bold uppercase tracking-wider transition-all rounded-full flex items-center justify-center gap-2 flex-shrink-0 shadow-xs"
+                disabled={isSubmitting}
+                className="px-7 py-3.5 bg-[#3C4A3E] hover:bg-[#2C372D] disabled:bg-[#7E8F81] text-white text-xs font-bold uppercase tracking-wider transition-all rounded-full flex items-center justify-center gap-2 flex-shrink-0 shadow-xs cursor-pointer"
               >
-                <span>Subscribe</span>
+                <span>{isSubmitting ? 'Subscribing...' : 'Subscribe'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>

@@ -1,9 +1,20 @@
-import React from 'react';
-import { categories } from '../data/categories';
+import React, { useState, useEffect } from 'react';
+import { categories as initialCategories } from '../data/categories';
 import { useStore } from '../context/StoreContext';
+import { categoriesApi } from '../api';
+import type { Category } from '../types';
 
 export const ShopByCategory: React.FC = () => {
   const { selectedCategory, setSelectedCategory } = useStore();
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+
+  useEffect(() => {
+    categoriesApi.getCategories().then((res) => {
+      if (res.data && res.data.length > 0) {
+        setCategories(res.data);
+      }
+    });
+  }, []);
 
   const handleCategoryClick = (catName: string) => {
     setSelectedCategory(catName);
@@ -27,11 +38,11 @@ export const ShopByCategory: React.FC = () => {
           </h2>
         </div>
 
-        {/* 7 Circular Category Items:
-            - On Desktop: Exactly 7 columns in one clean row matching screenshot
-            - On Mobile: Smooth swipeable row with scrollbar hidden, or responsive wrapping
+        {/* 8 Circular Category Items:
+            - On Desktop: Clean row of 8 columns
+            - On Mobile: Smooth swipeable row with scrollbar hidden
         */}
-        <div className="flex md:grid md:grid-cols-7 overflow-x-auto no-scrollbar gap-5 sm:gap-6 md:gap-4 lg:gap-6 pb-2 md:pb-0 justify-start md:justify-center px-1">
+        <div className="flex md:grid md:grid-cols-8 overflow-x-auto no-scrollbar gap-4 sm:gap-5 md:gap-3 lg:gap-5 pb-2 md:pb-0 justify-start md:justify-center px-1">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat.name;
 
@@ -39,11 +50,11 @@ export const ShopByCategory: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.name)}
-                className="group flex flex-col items-center text-center flex-shrink-0 focus:outline-none transition-transform hover:-translate-y-1 w-[88px] sm:w-[110px] md:w-auto"
+                className="group flex flex-col items-center text-center flex-shrink-0 focus:outline-none transition-transform hover:-translate-y-1 w-[82px] sm:w-[98px] md:w-auto"
               >
                 {/* Circular Photo Container with subtle border matching screenshot */}
                 <div 
-                  className={`w-20 h-20 sm:w-26 sm:h-26 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full overflow-hidden p-1 bg-[#F4EFE6] border-2 transition-all duration-300 flex items-center justify-center shadow-2xs ${
+                  className={`w-18 h-18 sm:w-22 sm:h-22 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden p-1 bg-[#F4EFE6] border-2 transition-all duration-300 flex items-center justify-center shadow-2xs ${
                     isSelected 
                       ? 'border-[#2E4D34] ring-2 ring-[#2E4D34]/30 scale-105 shadow-md' 
                       : 'border-[#E5DDD0] group-hover:border-[#2E4D34] group-hover:shadow-md'
@@ -52,6 +63,12 @@ export const ShopByCategory: React.FC = () => {
                   <img
                     src={cat.image}
                     alt={cat.name}
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.endsWith('/botanical-care-banner.jpg')) {
+                        target.src = '/botanical-care-banner.jpg';
+                      }
+                    }}
                     className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>

@@ -9,6 +9,7 @@ import {
   Tag
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { ordersApi } from '../api';
 
 export const CartDrawer: React.FC = () => {
   const { 
@@ -19,38 +20,74 @@ export const CartDrawer: React.FC = () => {
     removeFromCart, 
     cartTotal,
     clearCart,
-    showToast
+    showToast,
+    openProductPage,
+    user
   } = useStore();
 
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState(0);
   const [postalCode, setPostalCode] = useState('M5V 2T6');
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
+  const [createdOrderRef, setCreatedOrderRef] = useState<string>('');
 
-  const discountAmount = promoApplied ? cartTotal * 0.1 : 0;
+  const discountAmount = promoApplied ? (cartTotal * discountPercent) / 100 : 0;
   const deliveryCharge = cartTotal >= 35 || cartTotal === 0 ? 0 : 5;
   const finalPayable = Math.max(0, cartTotal - discountAmount + deliveryCharge);
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (promoCode.trim().toUpperCase() === 'CHILLY10' || promoCode.trim().toUpperCase() === 'NATURAL10') {
-      setPromoApplied(true);
-      showToast('Coupon applied! 10% Extra Savings', 'success');
-    } else {
-      showToast('Invalid coupon. Try "CHILLY10"', 'warning');
+    if (!promoCode.trim()) return;
+
+    try {
+      const res = await ordersApi.validateCoupon(promoCode);
+      if (res.data?.valid) {
+        setPromoApplied(true);
+        setDiscountPercent(res.data.discountPercent || 10);
+        showToast(res.data.message || 'Coupon applied successfully!', 'success');
+      } else {
+        setPromoApplied(false);
+        setDiscountPercent(0);
+        showToast(res.data?.message || 'Invalid coupon code. Try "CHILLY10"', 'warning');
+      }
+    } catch {
+      showToast('Could not validate coupon. Try "CHILLY10"', 'warning');
     }
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (cart.length === 0) return;
     setIsOrdering(true);
-    setTimeout(() => {
-      setIsOrdering(false);
+
+    try {
+      const orderPayload = {
+        items: cart.map((c) => ({
+          productId: c.product.id,
+          name: c.product.name,
+          price: c.product.price,
+          quantity: c.quantity,
+        })),
+        totalAmount: finalPayable,
+        deliveryCharge,
+        discountAmount,
+        postalCode,
+        customerName: user?.name,
+        customerEmail: user?.email,
+        customerPhone: user?.phone,
+      };
+
+      const res = await ordersApi.createOrder(orderPayload);
+      setCreatedOrderRef(res.data?.orderNumber || `CF-${Math.floor(100000 + Math.random() * 900000)}`);
       setOrderDone(true);
       clearCart();
-      showToast('Order Placed Successfully! Confirmation email sent.', 'success');
-    }, 1200);
+      showToast('Order Placed Successfully! Confirmation sent.', 'success');
+    } catch {
+      showToast('Order creation error. Please try again.', 'warning');
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   if (!isCartOpen) return null;
@@ -109,6 +146,11 @@ export const CartDrawer: React.FC = () => {
                 <h3 className="font-serif font-bold text-xl text-[#223B28]">
                   Order Placed Successfully!
                 </h3>
+                {createdOrderRef && (
+                  <div className="inline-block px-3 py-1 bg-white border border-[#D5DDD0] text-xs font-mono text-[#2E4D34] rounded-full">
+                    Order Ref: {createdOrderRef}
+                  </div>
+                )}
                 <p className="text-xs text-[#506052] leading-relaxed max-w-xs mx-auto font-normal">
                   Your handcrafted goods are being lovingly packed by our local artisans. Estimated delivery: 2-3 business days.
                 </p>
@@ -144,7 +186,13 @@ export const CartDrawer: React.FC = () => {
                   className="bg-[#FAF7F2] rounded-2xl border border-[#ECE7DD] p-4 flex gap-4"
                 >
                   {/* Image */}
-                  <div className="w-20 h-20 p-1 flex-shrink-0 flex items-center justify-center bg-white rounded-xl border border-[#ECE7DD]">
+                  <div 
+                    onClick={() => {
+                      openProductPage(item.product);
+                      setIsCartOpen(false);
+                    }}
+                    className="w-20 h-20 p-1 flex-shrink-0 flex items-center justify-center bg-white rounded-xl border border-[#ECE7DD] cursor-pointer hover:border-[#203D26]"
+                  >
                     <img
                       src={item.product.image}
                       alt={item.product.name}
@@ -155,7 +203,13 @@ export const CartDrawer: React.FC = () => {
                   {/* Info */}
                   <div className="flex-1 min-w-0 flex flex-col justify-between">
                     <div>
-                      <h4 className="text-xs sm:text-sm font-semibold text-[#223B28] line-clamp-1">
+                      <h4 
+                        onClick={() => {
+                          openProductPage(item.product);
+                          setIsCartOpen(false);
+                        }}
+                        className="text-xs sm:text-sm font-semibold text-[#223B28] hover:text-[#2D4F32] cursor-pointer line-clamp-1 transition-colors"
+                      >
                         {item.product.name}
                       </h4>
                       <div className="flex items-center gap-2 mt-1">
