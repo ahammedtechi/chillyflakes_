@@ -21,10 +21,10 @@ const queryClient = new QueryClient({
   },
 });
 
-// Start MSW in development (or whenever VITE_USE_MOCKS === 'true') to serve onboarding, products, and admin mocks
-// Vendor auth endpoints are passed through to real Django backend via MSW passthrough
+// Start MSW whenever VITE_USE_MOCKS !== 'false' (both in dev and on Vercel preview/demos)
+// Vendor auth endpoints are passed through to real Django backend locally via MSW passthrough
 async function prepareApp(): Promise<void> {
-  if (import.meta.env.DEV || import.meta.env.VITE_USE_MOCKS === 'true') {
+  if (import.meta.env.VITE_USE_MOCKS !== 'false') {
     try {
       const { worker } = await import('./mocks/browser');
       await worker.start({
@@ -38,7 +38,7 @@ async function prepareApp(): Promise<void> {
     }
   }
 
-  // Fetch CSRF token into memory on app bootstrap
+  // Fetch CSRF token into memory on app bootstrap (non-blocking for app rendering)
   try {
     await fetchCsrfToken('app start');
   } catch (err) {
@@ -46,18 +46,22 @@ async function prepareApp(): Promise<void> {
   }
 }
 
-prepareApp().then(() => {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <VendorAuthProvider>
-            <AdminAuthProvider>
-              <AppRoutes />
-            </AdminAuthProvider>
-          </VendorAuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </StrictMode>
-  );
-});
+prepareApp()
+  .catch((err) => {
+    console.warn('[App] prepareApp warning:', err);
+  })
+  .finally(() => {
+    createRoot(document.getElementById('root')!).render(
+      <StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <VendorAuthProvider>
+              <AdminAuthProvider>
+                <AppRoutes />
+              </AdminAuthProvider>
+            </VendorAuthProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </StrictMode>
+    );
+  });

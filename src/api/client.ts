@@ -176,6 +176,14 @@ axiosClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) 
 // Response Interceptor: normalize error to { code: string, message: string, fieldErrors?: Record<string, string[]> }
 axiosClient.interceptors.response.use(
   (response) => {
+    // Reject HTML responses from static rewrites
+    if (typeof response.data === 'string' && response.data.trim().startsWith('<')) {
+      return Promise.reject({
+        code: 'html_response',
+        message: 'Endpoint returned HTML instead of JSON.',
+      });
+    }
+
     const token = extractCsrfFromHeaders(response.headers);
     if (token) {
       inMemoryCsrfToken = token;
