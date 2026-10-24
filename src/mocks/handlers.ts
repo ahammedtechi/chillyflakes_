@@ -1,4 +1,6 @@
-import { http, HttpResponse, delay } from 'msw';
+import { http, HttpResponse, delay, passthrough } from 'msw';
+import { adminHandlers } from './adminHandlers';
+import { onboardingHandlers } from './onboardingHandlers';
 import {
   ALLOWED_CATEGORY_IDS,
   type VendorRegisterPayload,
@@ -1010,7 +1012,33 @@ export const mockVendorProducts: MockProductRecord[] = [
   }),
 ];
 
+const useMocksAuth = import.meta.env.VITE_USE_MOCKS_AUTH === 'true';
+
 export const handlers = [
+  // When VITE_USE_MOCKS_AUTH is not 'true', pass vendor auth and CSRF through to the real Django backend
+  ...(!useMocksAuth
+    ? [
+        http.all('*/api/v1/csrf/', () => passthrough()),
+        http.all('*/api/v1/vendor/auth/*', () => passthrough()),
+        http.all('*/api/v1/vendor/auth/**', () => passthrough()),
+      ]
+    : []),
+
+  ...adminHandlers,
+  ...onboardingHandlers,
+
+  // 0. GET /api/v1/csrf/
+  http.get('*/api/v1/csrf/', async () => {
+    return HttpResponse.json(
+      { detail: 'ok' },
+      {
+        headers: {
+          'X-CSRFToken': 'mock-csrf-token-live',
+        },
+      }
+    );
+  }),
+
   // 1. POST /api/v1/vendor/auth/check-availability/
   http.post('*/api/v1/vendor/auth/check-availability/', async ({ request }) => {
     await delay(600);
@@ -2793,51 +2821,6 @@ export const handlers = [
   http.delete('*/api/v1/vendor/uploads/:id/', async () => {
     await delay(300);
     return HttpResponse.json({ success: true, message: 'Upload removed.' }, { status: 200 });
-  }),
-
-  // 27. POST /api/v1/admin/auth/login/
-  http.post('*/api/v1/admin/auth/login/', async ({ request }) => {
-    await delay(500);
-    const body = (await request.json()) as { email?: string; password?: string };
-    const email = (body.email || '').trim().toLowerCase();
-    const password = body.password || '';
-
-    if (email === 'admin@test.com' && password === 'Test@123') {
-      mockCurrentAdmin = {
-        id: 'admin_1',
-        email: 'admin@test.com',
-        name: 'Platform Super Admin',
-        role: 'admin',
-      };
-      return HttpResponse.json(
-        { message: 'Admin login successful', user: mockCurrentAdmin },
-        { status: 200 }
-      );
-    }
-
-    return HttpResponse.json(
-      { code: 'invalid_credentials', message: 'Invalid admin email or password.' },
-      { status: 401 }
-    );
-  }),
-
-  // 28. POST /api/v1/admin/auth/logout/
-  http.post('*/api/v1/admin/auth/logout/', async () => {
-    await delay(300);
-    mockCurrentAdmin = null;
-    return HttpResponse.json({ message: 'Logged out successfully' }, { status: 200 });
-  }),
-
-  // 29. GET /api/v1/admin/auth/me/
-  http.get('*/api/v1/admin/auth/me/', async () => {
-    await delay(300);
-    if (!mockCurrentAdmin) {
-      return HttpResponse.json(
-        { code: 'not_authenticated', message: 'Admin authentication required.' },
-        { status: 401 }
-      );
-    }
-    return HttpResponse.json(mockCurrentAdmin, { status: 200 });
   }),
 
   // 30. GET /api/v1/admin/products/

@@ -7,6 +7,50 @@ This document provides the API specifications for the Django REST Framework (DRF
 
 ---
 
+## Error Format
+
+All error responses across the API follow a standardized JSON envelope:
+
+```json
+{
+  "code": "validation_error",
+  "message": "Please resolve the highlighted errors before submitting.",
+  "fieldErrors": {
+    "title": ["This field is required."],
+    "colors.0.images": ["Color 'Indigo Blue' must have at least 1 photo."],
+    "attributes.fabric": ["Fabric / Material is required for Clothes & Fashion."]
+  },
+  "retry_after_seconds": 900
+}
+```
+
+- **`code`** (`string`, required): Machine-readable identifier for the error category or condition (e.g., `"validation_error"`, `"already_registered"`, `"invalid_otp"`, `"too_many_attempts"`).
+- **`message`** (`string`, required): Human-readable error description or summary suitable for user feedback.
+- **`fieldErrors`** (`object`, optional): An object mapping field identifiers to arrays of error strings. Dotted paths are used for nested fields or list indices (e.g., `"colors"`, `"colors.0.images"`, `"attributes.fabric"`). The value for every field key is strictly an array of strings (e.g. `"title": ["This field is required"]`).
+- **`retry_after_seconds`** (`integer`, optional): Integer seconds indicating remaining wait time when rate-limited or locked (e.g., on HTTP `429 Too Many Requests`).
+
+---
+
+## CSRF Protection (`GET /api/v1/csrf/`)
+
+All state-changing endpoints (`POST`, `PUT`, `PATCH`, `DELETE`) require Django CSRF verification.
+
+- **Method:** `GET`
+- **Path:** `/api/v1/csrf/`
+- **Authentication:** Public
+- **Response Headers:** `X-CSRFToken: <csrf-token>`
+- **Response Body (`200 OK`):**
+```json
+{
+  "detail": "ok"
+}
+```
+
+> **CSRF HANDLING REQUIREMENT:**
+> `GET /api/v1/csrf/` returns `{ "detail": "ok" }` and puts the token in the `X-CSRFToken` **RESPONSE HEADER**. The CSRF cookie is `HttpOnly`, so the frontend must read the token from that header and send it back in the `X-CSRFToken` request header on every `POST`, `PUT`, `PATCH`, and `DELETE`.
+
+---
+
 ## 1. Auth: Register (`POST /api/v1/vendor/auth/register/`)
 
 Registers a new vendor/artisan account on ChillyFlakes in `pending_verification` status, sets a signed `httpOnly` pending session cookie, and dispatches separate 6-digit OTP codes to the vendor's email and mobile number.
@@ -23,10 +67,10 @@ Registers a new vendor/artisan account on ChillyFlakes in `pending_verification`
 
 | Field Name | Type | Required | Description & Validation Rules |
 |---|---|:---:|---|
-| `full_name` | `string` | **Yes** | Full legal or display name of the seller. Min 2 characters, max 120 characters. Trim whitespace. |
+| `full_name` | `string` | **Yes** | Full legal or display name of the seller. Min 2 characters, max 100 characters. Trim whitespace. |
 | `email` | `string` | **Yes** | Valid email address. Max 255 characters. Unique check against approved/active vendors. |
 | `mobile` | `string` | **Yes** | 10-digit Indian mobile number starting with 6, 7, 8, or 9 (e.g., `"9876543210"`). Unique check against approved/active vendors. |
-| `business_name` | `string` | **No** | Optional name of the shop, studio, or enterprise. Max 150 characters. |
+| `business_name` | `string` | **Yes** | Name of the shop, studio, or enterprise. Min 2 characters, max 100 characters. |
 | `categories` | `string[]` | **Yes** | Array of category IDs strictly from: `["natural-products", "handmade-products", "jewelry", "clothes-fashion", "home-living", "retail-products", "services", "books"]`. |
 | `wholesale_enabled` | `boolean` | **Yes** | Whether the seller wants to sell in bulk / wholesale. Defaults to `false`. |
 | `state` | `string` | **Yes** | State or Union Territory code/name (e.g., `"KL"`, `"TN"`). Must match official Indian States / UTs. |
@@ -249,18 +293,48 @@ Dispatches a fresh 6-digit OTP to the requested channel (`mobile` or `email`) an
 
 ---
 
-## 6. Auth: Login (`POST /api/v1/vendor/auth/login/`)
+## 6. Auth: Login, Session & Profile
+
+### 6.1 Vendor Login (`POST /api/v1/vendor/auth/login/`)
 
 Authenticates an existing vendor using identifier (email or 10-digit mobile) and password.
 
-### 6.1 Status Handling
-If the credentials are valid but the vendor's status is `pending_verification`, the server responds with:
+- **Method:** `POST`
+- **Path:** `/api/v1/vendor/auth/login/`
+- **Authentication:** Public (Rate-limited)
+- **Content-Type:** `application/json`
+
+#### Request Body
+```json
+{
+  "identifier": "aiswarya.crafts@example.com",
+  "password": "SecurePassword#2026"
+}
+```
+*(Accepts either registered email address or 10-digit Indian mobile number)*
+
+#### Successful Login Response (`200 OK`)
+Returns HTTP 200 with the vendor user profile object:
+```json
+{
+  "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+  "full_name": "Aiswarya Lakshmi",
+  "email": "aiswarya.crafts@example.com",
+  "mobile_masked": "+91 98XXXXXX10",
+  "vendor_status": "approved",
+  "store_name": "Lakshmi Handmade Terracotta"
+}
+```
+*(IDs are UUID strings, not "v_101" style).*
+
+#### Pending Verification Login Response (`200 OK`)
+If the credentials are valid but the vendor's status is `pending_verification`, the server responds with HTTP 200, keeps its existing shape, and creates no session:
 ```json
 {
   "message": "Account pending verification",
   "vendor_status": "pending_verification",
   "user": {
-    "id": "v_101",
+    "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
     "full_name": "Priya Nair",
     "email": "pending@test.com",
     "mobile_masked": "+91 98XXXXXX11",
@@ -268,7 +342,58 @@ If the credentials are valid but the vendor's status is `pending_verification`, 
   }
 }
 ```
-Client redirects the vendor directly to `/vendor/verify-otp`.
+Client redirects the vendor directly to `/vendor/verify-otp`. The pending-verification login response keeps its existing shape and creates no session.
+
+---
+
+### 6.2 Current Vendor (`GET /api/v1/vendor/auth/me/`)
+
+Retrieves the current authenticated vendor profile.
+
+- **Method:** `GET`
+- **Path:** `/api/v1/vendor/auth/me/`
+- **Authentication:** Authenticated Vendor Session / Bearer Token
+
+#### Success Response (`200 OK`)
+Returns the same flat object as successful vendor login:
+```json
+{
+  "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+  "full_name": "Aiswarya Lakshmi",
+  "email": "aiswarya.crafts@example.com",
+  "mobile_masked": "+91 98XXXXXX10",
+  "vendor_status": "approved",
+  "store_name": "Lakshmi Handmade Terracotta"
+}
+```
+*(IDs are UUID strings, not "v_101" style).*
+
+#### Error Responses
+- **Not Logged In (`401 Unauthorized`):**
+```json
+{
+  "code": "not_authenticated",
+  "message": "Authentication credentials were not provided."
+}
+```
+- **Non-Vendor Roles (`403 Forbidden`):**
+```json
+{
+  "code": "permission_denied",
+  "message": "You do not have permission to access vendor resources."
+}
+```
+
+---
+
+### 6.3 Vendor Logout (`POST /api/v1/vendor/auth/logout/`)
+
+Terminates the vendor session.
+
+- **Method:** `POST`
+- **Path:** `/api/v1/vendor/auth/logout/`
+- **Authentication:** Authenticated Vendor Session
+- **Success Response:** `204 No Content` (with no response body).
 
 ---
 
@@ -371,7 +496,7 @@ A secure 3-step password reset workflow for sellers with zero email/mobile accou
 
 1. **Dual OTP Generation & Cryptographic Storage:**
    - OTPs must be 6 numeric digits generated using a cryptographically secure pseudo-random number generator (`secrets.SystemRandom().randint(100000, 999999)`).
-   - OTPs must **never be stored in plaintext** in the database or cache. Store standard salted SHA-256 or PBKDF2 hashes.
+   - OTPs must **never be stored in plaintext** in the database or cache. Stored using HMAC-SHA256 with a server secret (`OTP_PEPPER`) and constant-time comparison.
    - OTP validity is strictly **10 minutes**.
 2. **Attempt Limits & Channel Lockout:**
    - Maximum 5 failed attempts per channel or reset session.
@@ -386,14 +511,14 @@ A secure 3-step password reset workflow for sellers with zero email/mobile accou
 6. **Pending Account Lifecycle:**
    - When a user registers, create the record in status `pending_verification`.
    - If a new registration is submitted with an unverified email or mobile matching an existing unverified pending record, the old pending record and OTPs are replaced.
-   - Unverified pending accounts older than 24 hours must be pruned automatically (via Celery periodic task).
+   - Unverified pending accounts older than 24 hours are removed by a management command (scheduled with Windows Task Scheduler or cron); no Celery requirement for now.
 7. **Identification via Cookie (Zero Leaks):**
    - The pending registration and password reset sessions are identified solely through signed, `httpOnly`, `Secure`, and `SameSite=Lax` cookies.
    - The frontend never receives, stores, or sends sensitive internal user IDs or raw tokens in URLs or localStorage.
 8. **Production Logging Safety:**
    - Plaintext OTPs, full phone numbers, and full email addresses must never appear in production logs or telemetry. Mask all identifiers (`+91 98XXXXXX21`, `ab***@gmail.com`).
-9. **Asynchronous Notification Service Interfaces:**
-   - SMS and email dispatch must execute asynchronously through clean service interfaces (e.g. Celery workers connected to SMS gateways like Twilio/Gupshup and Email providers like AWS SES/SendGrid).
+9. **Notification Service Interfaces:**
+   - Notifications are sent right after the database transaction commits through SMS and email service interfaces (console in development). Background sending (a worker queue) is required before launch.
 
 ---
 
@@ -779,7 +904,7 @@ Returns a paginated list of catalog products for administrative moderation, with
 - **Query Parameters:**
   - `status` (string, optional): Filter by `pending_review` (default tab), `approved`, `rejected`, or `all`.
   - `category` (string, optional): Product category ID.
-  - `seller` (string, optional): Seller ID (e.g. `v_101`).
+  - `seller` (string, optional): Seller UUID string (e.g. `"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"`).
   - `search` (string, optional): Keyword query matched against product title, SKU, or seller store name.
   - `ordering` (string, optional): `submitted_asc` (default, oldest first for FIFO SLA), `submitted_desc`, `price_asc`, `price_desc`, `updated_desc`.
   - `page` (integer, default `1`)
@@ -803,7 +928,7 @@ Returns a paginated list of catalog products for administrative moderation, with
       "status": "pending_review",
       "wholesale_enabled": true,
       "seller": {
-        "seller_id": "v_104",
+        "seller_id": "b1ffbc88-8b1b-4ef7-aa6d-5bb8bd270b22",
         "store_name": "Heritage Handlooms & Crafts"
       },
       "submitted_at": "2026-10-18T08:30:00Z",
@@ -871,7 +996,7 @@ Retrieves the complete submission payload for admin inspection, including seller
     { "sku": "CLO-ANK-26-BLU-S", "color_name": "Indigo Blue", "size": "S", "stock": 5, "price_paise": 285000 }
   ],
   "seller": {
-    "seller_id": "v_104",
+    "seller_id": "b1ffbc88-8b1b-4ef7-aa6d-5bb8bd270b22",
     "store_name": "Heritage Handlooms & Crafts",
     "seller_name": "Meenakshi Sundaram",
     "email": "meenakshi@heritagecrafts.in",
@@ -1187,7 +1312,7 @@ Creates a new product listing in `draft` status. Permissive validation: only `ti
   "code": "duplicate_colors",
   "message": "Duplicate color names are not allowed within a product.",
   "fieldErrors": {
-    "colors": "Duplicate color names are not allowed within a product."
+    "colors": ["Duplicate color names are not allowed within a product."]
   }
 }
 ```
@@ -1235,11 +1360,11 @@ Strictly validates every required attribute, media item, and pricing constraint.
   "code": "validation_error",
   "message": "Please resolve the highlighted errors before submitting for review.",
   "fieldErrors": {
-    "title": "Title is required (minimum 3 characters).",
-    "description": "Description must be at least 50 characters of plain text.",
-    "price_paise": "Selling price cannot exceed Base Price (MRP).",
-    "colors.0.images": "Color 'Indigo Blue' must have at least 1 photo.",
-    "attributes.fabric": "Fabric / Material is required for Clothes & Fashion."
+    "title": ["Title is required (minimum 3 characters)."],
+    "description": ["Description must be at least 50 characters of plain text."],
+    "price_paise": ["Selling price cannot exceed Base Price (MRP)."],
+    "colors.0.images": ["Color 'Indigo Blue' must have at least 1 photo."],
+    "attributes.fabric": ["Fabric / Material is required for Clothes & Fashion."]
   }
 }
 ```
@@ -1345,6 +1470,460 @@ Platform Super Admin must resolve custom category submissions prior to publishin
   Body: `{ "name": "...", "description": "...", "is_active": boolean }`
 - **Add Subcategory:** `POST /api/v1/admin/categories/{id}/subcategories/`
   Body: `{ "name": "..." }`
+
+---
+
+## 14. Super Admin Console API Specifications
+
+### Backend Security & Enforcement Rules
+1. **Strict Role & Permission Enforcement:**
+   Every admin endpoint requires an authenticated user with role admin (staff accounts included; staff permissions are checked per role on the server) AND the specific permission (e.g. `sellers:decide`, `customers:edit`). Permission checks happen on the server for every request, not only in the client UI.
+2. **System Roles Immutability:**
+   The `Super Admin` role is system-defined and cannot be renamed, edited, or deleted.
+3. **Self & Super Admin Demotion Safety:**
+   The last remaining active Super Admin cannot be removed, deactivated, or demoted. Administrators cannot alter their own role or deactivate themselves.
+4. **Zero-Knowledge Password Policy:**
+   User creation sends an invitation link with a single-use expiring token. Admins never set, type, or view passwords. Password hashes are never returned by any endpoint.
+5. **Soft Deletion with Audit Justification:**
+   User deletion is a soft delete (`is_deleted: true`, `status: "deleted"`) requiring an explicit reason, keeping historic orders and audit trails intact.
+6. **Mandatory KYC Verification for Approval:**
+   Seller approval strictly requires all required documents to be verified. Attempting to approve an applicant with unverified documents returns HTTP `400 Bad Request` with code `documents_not_verified` and a list of missing documents.
+7. **Sensitive Field Masking & Decryption Audit:**
+   PAN, GSTIN, bank account numbers, and ID documents are encrypted at rest, masked in standard API responses, and revealed only via the dedicated `/reveal/` endpoint which records an immutable audit log entry.
+8. **Short-Lived Document Access:**
+   KYC files are stored in private cloud buckets and served via short-lived signed URLs only to authorized staff.
+9. **Immutable Audit Trail:**
+   Every approval, rejection, reveal, role change, user invite, deactivation, and soft-delete is written to an append-only audit log capturing `actor`, `action`, `module`, `target_id`, `ip_address`, `timestamp`, and `reason`.
+
+### Endpoints Summary
+
+#### Overview
+- `GET /api/v1/admin/overview/`
+  Returns 10 core operational metrics (amounts in paise) and active compliance alerts.
+
+#### User & Customer Directory
+- `GET /api/v1/admin/users/?tab=&search=&role=&status=&page=&page_size=`
+- `POST /api/v1/admin/users/` (Invite new user)
+- `GET /api/v1/admin/users/{id}/`
+- `PATCH /api/v1/admin/users/{id}/`
+- `POST /api/v1/admin/users/{id}/deactivate/`
+- `POST /api/v1/admin/users/{id}/activate/`
+- `POST /api/v1/admin/users/{id}/force-password-reset/`
+- `POST /api/v1/admin/users/{id}/sign-out-all/`
+- `DELETE /api/v1/admin/users/{id}/` (Soft-delete with body `{ "reason": "..." }`)
+
+#### Vendor & Seller Hub
+- `GET /api/v1/admin/sellers/?status=&search=&state=&business_type=&page=&page_size=`
+- `GET /api/v1/admin/sellers/{id}/`
+- `POST /api/v1/admin/sellers/{id}/documents/{docId}/verify/`
+- `POST /api/v1/admin/sellers/{id}/documents/{docId}/reject/` (Body: `{ "reason": "..." }`)
+- `POST /api/v1/admin/sellers/{id}/under-review/`
+- `POST /api/v1/admin/sellers/{id}/approve/` (Requires all documents verified; returns `400 documents_not_verified` if unverified)
+- `POST /api/v1/admin/sellers/{id}/request-resubmit/` (Body: `{ "reason": "...", "flagged_sections": ["..."] }`)
+- `POST /api/v1/admin/sellers/{id}/reject/` (Body: `{ "reason": "..." }`)
+- `POST /api/v1/admin/sellers/{id}/suspend/` (Body: `{ "reason": "..." }`)
+- `POST /api/v1/admin/sellers/{id}/reactivate/`
+- `POST /api/v1/admin/sellers/{id}/reveal/` (Body: `{ "field": "tax_id" | "pan" | "bank_account" }`; logs reveal event)
+
+#### Roles & Staff Management
+- `GET /api/v1/admin/roles/`
+- `POST /api/v1/admin/roles/`
+- `PATCH /api/v1/admin/roles/{id}/`
+- `DELETE /api/v1/admin/roles/{id}/` (Cannot delete role with assigned staff)
+- `GET /api/v1/admin/staff/`
+- `PATCH /api/v1/admin/staff/{id}/role/` (Body: `{ "role_id": "..." }`)
+
+#### Audit Log
+- `GET /api/v1/admin/audit-log/?search=&action=&module=&from=&to=&page=&page_size=`
+
+---
+
+## 15. Vendor Onboarding & Verification Status API Specifications
+
+### Overview & Seller Lifecycle
+Every registered seller begins in `onboarding_incomplete` status. Sellers cannot access the seller dashboard or list products until their application is reviewed and approved by platform administrators.
+
+```mermaid
+stateDiagram-v2
+    [*] --> onboarding_incomplete: Registration
+    onboarding_incomplete --> under_review: POST /api/v1/vendor/onboarding/submit/
+    under_review --> resubmission_requested: Admin requests corrections
+    resubmission_requested --> under_review: POST /api/v1/vendor/onboarding/submit/
+    under_review --> approved: Admin approves all KYC
+    under_review --> rejected: Admin rejects application
+    approved --> suspended: Policy violation / Admin action
+    suspended --> approved: Reactivation / Appeal
+```
+
+### Backend Security & Enforcement Rules
+1. **Private Storage for KYC & Financial Documents:**
+   All uploaded identity proofs, PAN cards, address proofs, artisan cards, and cancelled cheques are stored in private, non-public cloud buckets with strict IAM controls. They are NEVER stored in public static folders or public CDNs.
+2. **Ephemeral Signed Preview URLs:**
+   Document previews are accessed exclusively via `GET /api/v1/vendor/onboarding/documents/{id}/preview-link/`, which generates short-lived signed URLs expiring in 15 minutes.
+3. **Magic-Byte Content Inspection:**
+   File uploads undergo deep MIME-type and magic-byte inspection (not relying on file extensions or client headers alone) to reject disguised scripts, executables, or HTML files.
+4. **EXIF Stripping:**
+   All image uploads (JPEG/PNG/WebP) have EXIF metadata (including geolocation and device identifiers) stripped during server ingestion.
+5. **Strict File Size Limits:**
+   - Identity, Address, PAN, Artisan, Cheque documents: Maximum 5 MB (`application/pdf`, `image/jpeg`, `image/png`, `image/webp`).
+   - Store Logo: Maximum 2 MB (`image/jpeg`, `image/png`, `image/webp`).
+   - Store Banner: Maximum 3 MB (`image/jpeg`, `image/png`, `image/webp`).
+6. **Server-Side Format & Checksum Verification:**
+   - **PAN:** Must match `^[A-Z]{5}[0-9]{4}[A-Z]$`. 4th character must reflect entity type ('P' for individual, 'C' for company, 'F' for partnership/LLP).
+   - **GSTIN:** When provided or required, must match `^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$` with state code and checksum validation.
+   - **IFSC:** Must match `^[A-Z]{4}0[A-Z0-9]{6}$`. Verified against RBI IFSC directory.
+   - **Postal PIN Code:** Must match `^[1-9][0-9]{5}$` (valid 6-digit Indian PIN code).
+7. **Encryption at Rest & Response Masking:**
+   - Bank account numbers, IFSC, and PAN are encrypted at rest using AES-256-GCM.
+   - In all draft and status read responses, bank account numbers are masked (`••••••••1234` displaying only the last 4 digits) and PAN is masked (`AAAAA••••A`).
+   - Plaintext values are never returned to standard client endpoints.
+8. **Tenant Isolation:**
+   Vendors can only view, edit, or delete documents and draft sections belonging to their own authenticated seller account. Attempting to query another vendor's document ID returns HTTP `404 Not Found`.
+9. **Lock While Under Review:**
+   When `vendor_status` is `under_review`, all draft update (`PUT /steps/{step}/`), upload (`POST /documents/`), delete (`DELETE /documents/{id}/`), and submit (`POST /submit/`) endpoints return HTTP `403 Forbidden` with code `onboarding_locked`. Edits are unlocked only when the status transitions to `resubmission_requested` or `onboarding_incomplete`.
+10. **Immutable Audit Logging:**
+    Submissions, admin resubmission requests, document verifications, rejections, approvals, and suspensions are logged in an append-only audit trail capturing actor, timestamp, IP, and reason.
+
+---
+
+### Endpoints Specification
+
+#### 1. Fetch Onboarding Draft (`GET /api/v1/vendor/onboarding/`)
+- **Authentication:** Required (`vendor`)
+- **Success Response (`200 OK`):**
+```json
+{
+  "status": "onboarding_incomplete",
+  "current_step": 1,
+  "completed_steps": [1],
+  "flagged_sections": [],
+  "rejection_reason": null,
+  "reviewer_notes": null,
+  "submitted_at": null,
+  "data": {
+    "store_name": "Terracotta Roots",
+    "store_slug": "terracotta-roots",
+    "seller_type": "individual_artisan",
+    "short_description": "Handcrafted earthen pottery and terracotta tableware.",
+    "craft_story": "Three generations of master potters crafting sustainable clay vessels.",
+    "logo_url": "https://cdn.chillyflakes.in/uploads/logo_102.png",
+    "banner_url": null,
+    "languages": ["en", "ml"],
+    "pickup_address": {
+      "contact_person": "Rajan K",
+      "contact_phone": "+919876543210",
+      "address_line1": "14 Pottery Lane, Nilambur",
+      "address_line2": "Near Old Post Office",
+      "city": "Malappuram",
+      "state": "Kerala",
+      "pincode": "679329"
+    },
+    "same_as_business_address": true,
+    "registered_business_address": null,
+    "pan_number_masked": "AAAAA••••A",
+    "pan_document": {
+      "id": "doc_pan_01",
+      "name": "pan_card.pdf",
+      "size": 1048576,
+      "uploaded_at": "2026-10-24T10:00:00Z"
+    },
+    "gstin": null,
+    "id_type": "aadhaar",
+    "id_document": {
+      "id": "doc_id_01",
+      "name": "aadhaar_masked.pdf",
+      "size": 2097152,
+      "uploaded_at": "2026-10-24T10:05:00Z"
+    },
+    "address_document": {
+      "id": "doc_addr_01",
+      "name": "electricity_bill.pdf",
+      "size": 1540000,
+      "uploaded_at": "2026-10-24T10:10:00Z"
+    },
+    "artisan_card_document": null,
+    "account_holder_name": "Rajan K",
+    "account_number_masked": "••••••••5678",
+    "ifsc_code": "SBIN0001234",
+    "bank_name": "State Bank of India",
+    "branch_name": "Nilambur Main",
+    "account_type": "savings",
+    "cancelled_cheque_document": {
+      "id": "doc_chq_01",
+      "name": "passbook_front.jpg",
+      "size": 890000,
+      "uploaded_at": "2026-10-24T10:15:00Z"
+    },
+    "agreement_accepted": true
+  }
+}
+```
+
+---
+
+#### 2. Save Onboarding Step Draft (`PUT /api/v1/vendor/onboarding/steps/{step}/`)
+- **Authentication:** Required (`vendor`)
+- **Path Parameter:** `step` (Integer `1` to `5`)
+- **Constraints:**
+  - Auto-saves partial or completed step data.
+  - Does not enforce other steps until submission.
+  - Sensitive values (PAN, account number) received here are encrypted immediately and masked in the returned payload.
+
+**Step 1 Request Payload (`store_details`):**
+```json
+{
+  "store_name": "Terracotta Roots",
+  "store_slug": "terracotta-roots",
+  "seller_type": "individual_artisan",
+  "short_description": "Handcrafted clay items.",
+  "craft_story": "Three generations of master potters.",
+  "logo_url": "https://cdn.chillyflakes.in/uploads/logo_102.png",
+  "banner_url": null,
+  "languages": ["en", "ml"],
+  "social_links": {
+    "instagram": "https://instagram.com/terracottaroots",
+    "website": ""
+  }
+}
+```
+
+**Step 2 Request Payload (`pickup_address`):**
+```json
+{
+  "pickup_address": {
+    "contact_person": "Rajan K",
+    "contact_phone": "+919876543210",
+    "address_line1": "14 Pottery Lane",
+    "address_line2": "",
+    "city": "Malappuram",
+    "state": "Kerala",
+    "pincode": "679329"
+  },
+  "same_as_business_address": true,
+  "registered_business_address": null
+}
+```
+
+**Step 3 Request Payload (`verification_kyc`):**
+```json
+{
+  "pan_number": "ABCDE1234F",
+  "pan_document": {
+    "id": "doc_pan_01",
+    "name": "pan_card.pdf",
+    "size": 1048576,
+    "uploaded_at": "2026-10-24T10:00:00Z"
+  },
+  "gstin": "",
+  "id_type": "aadhaar",
+  "id_document": {
+    "id": "doc_id_01",
+    "name": "aadhaar_masked.pdf",
+    "size": 2097152,
+    "uploaded_at": "2026-10-24T10:05:00Z"
+  },
+  "address_document": {
+    "id": "doc_addr_01",
+    "name": "utility_bill.pdf",
+    "size": 1540000,
+    "uploaded_at": "2026-10-24T10:10:00Z"
+  },
+  "artisan_card_document": null
+}
+```
+
+**Step 4 Request Payload (`bank_details`):**
+```json
+{
+  "account_holder_name": "Rajan K",
+  "account_number": "12345678901234",
+  "confirm_account_number": "12345678901234",
+  "ifsc_code": "SBIN0001234",
+  "bank_name": "State Bank of India",
+  "branch_name": "Nilambur Main",
+  "account_type": "savings",
+  "cancelled_cheque_document": {
+    "id": "doc_chq_01",
+    "name": "cheque.jpg",
+    "size": 890000,
+    "uploaded_at": "2026-10-24T10:15:00Z"
+  }
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "step": 1,
+  "message": "Step 1 draft saved successfully."
+}
+```
+
+---
+
+#### 3. Upload Onboarding Document (`POST /api/v1/vendor/onboarding/documents/`)
+- **Authentication:** Required (`vendor`)
+- **Content-Type:** `multipart/form-data`
+- **Fields:**
+  - `file`: Binary file data.
+  - `doc_type`: String enum (`pan` | `id_proof` | `address_proof` | `artisan_card` | `cancelled_cheque` | `store_logo` | `store_banner`).
+- **Success Response (`201 Created`):**
+```json
+{
+  "id": "doc_pan_01",
+  "name": "pan_card.pdf",
+  "size": 1048576,
+  "mime_type": "application/pdf",
+  "uploaded_at": "2026-10-24T10:00:00Z"
+}
+```
+- **Error Responses (`400 Bad Request`):**
+  - `{ "code": "file_too_large", "message": "File exceeds maximum 5 MB limit.", "fieldErrors": { "file": ["File exceeds maximum 5 MB limit."] } }`
+  - `{ "code": "invalid_mime_type", "message": "Only PDF, JPEG, PNG, and WebP files are allowed.", "fieldErrors": { "file": ["Invalid file type."] } }`
+
+---
+
+#### 4. Delete Onboarding Document (`DELETE /api/v1/vendor/onboarding/documents/{id}/`)
+- **Authentication:** Required (`vendor`)
+- **Success Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "message": "Document removed successfully."
+}
+```
+
+---
+
+#### 5. Generate Temporary Preview Link (`GET /api/v1/vendor/onboarding/documents/{id}/preview-link/`)
+- **Authentication:** Required (`vendor` or `admin`)
+- **Success Response (`200 OK`):**
+```json
+{
+  "preview_url": "https://storage.chillyflakes.in/secure-docs/temp/doc_pan_01.pdf?sig=abc123xyz&exp=1792842000",
+  "expires_in_seconds": 900
+}
+```
+
+---
+
+#### 6. Store Slug Availability Check (`GET /api/v1/vendor/onboarding/slug-available/?slug={slug}`)
+- **Authentication:** Required (`vendor`)
+- **Parameters:** `slug` (Regex: `^[a-z0-9]+(-[a-z0-9]+)*$`, 3–60 chars)
+- **Success Response (`200 OK`):**
+```json
+{
+  "slug": "terracotta-roots",
+  "available": true,
+  "suggestion": null
+}
+```
+- If taken:
+```json
+{
+  "slug": "chilly-earth-pottery",
+  "available": false,
+  "suggestion": "chilly-earth-pottery-crafts"
+}
+```
+
+---
+
+#### 7. IFSC Lookup (`GET /api/v1/vendor/ifsc/{code}/`)
+- **Authentication:** Required (`vendor`)
+- **Success Response (`200 OK`):**
+```json
+{
+  "ifsc": "SBIN0001234",
+  "bank_name": "State Bank of India",
+  "branch_name": "Nilambur Main",
+  "city": "Nilambur",
+  "state": "Kerala"
+}
+```
+- **Error Response (`404 Not Found`):**
+```json
+{
+  "code": "invalid_ifsc",
+  "message": "IFSC code not found in directory.",
+  "fieldErrors": {
+    "ifsc_code": ["Invalid or unrecognized IFSC code."]
+  }
+}
+```
+
+---
+
+#### 8. Submit Onboarding for Approval (`POST /api/v1/vendor/onboarding/submit/`)
+- **Authentication:** Required (`vendor`)
+- **Validation:**
+  - Validates that all steps 1 through 5 are fully complete.
+  - Verifies presence of PAN document, ID document, Address document, and Cancelled Cheque.
+  - Validates company rules (if `seller_type == 'registered_company'`, `gstin` is strictly required).
+  - Verifies `agreement_accepted == true`.
+- **Success Response (`200 OK`):**
+```json
+{
+  "success": true,
+  "status": "under_review",
+  "submitted_at": "2026-10-24T10:30:00Z",
+  "message": "Your application has been submitted and is under review."
+}
+```
+- **Error Response (`422 Unprocessable Entity`):**
+```json
+{
+  "code": "validation_failed",
+  "message": "Required onboarding fields or documents are missing.",
+  "fieldErrors": {
+    "step3.pan_document": ["PAN document must be uploaded."],
+    "step4.account_number": ["Bank account number is required."]
+  }
+}
+```
+
+---
+
+#### 9. Vendor Status Check (`GET /api/v1/vendor/status/`)
+- **Authentication:** Required (`vendor`)
+- **Success Response (`200 OK`):**
+```json
+{
+  "vendor_status": "under_review",
+  "submitted_at": "2026-10-24T10:30:00Z",
+  "reviewed_at": null,
+  "rejection_reason": null,
+  "reviewer_notes": null,
+  "flagged_sections": [],
+  "store_summary": {
+    "name": "Terracotta Roots",
+    "seller_type": "individual_artisan",
+    "pickup_city": "Malappuram",
+    "pickup_state": "Kerala"
+  }
+}
+```
+
+When resubmission is requested by an admin (`resubmission_requested`):
+```json
+{
+  "vendor_status": "resubmission_requested",
+  "submitted_at": "2026-10-24T10:30:00Z",
+  "reviewed_at": "2026-10-24T12:00:00Z",
+  "rejection_reason": "Bank document image is unreadable.",
+  "reviewer_notes": "Please re-upload a clear photograph of your cancelled cheque or bank passbook where the account number and IFSC are legible.",
+  "flagged_sections": ["bank_details"],
+  "store_summary": {
+    "name": "Terracotta Roots",
+    "seller_type": "individual_artisan",
+    "pickup_city": "Malappuram",
+    "pickup_state": "Kerala"
+  }
+}
+```
+
+
 
 
 

@@ -20,7 +20,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const fetchAdmin = useCallback(async () => {
     try {
       const data = await getAdminMe();
-      if (data && data.role === 'admin') {
+      if (data && (data.role === 'admin' || data.role === 'staff' || Boolean(data.permissions?.length))) {
         setAdmin(data);
       } else {
         setAdmin(null);
@@ -62,7 +62,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       value={{
         admin,
         isLoading,
-        isAuthenticated: Boolean(admin && admin.role === 'admin'),
+        isAuthenticated: Boolean(admin),
         login,
         logout,
         refreshAdmin: fetchAdmin,

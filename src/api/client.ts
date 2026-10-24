@@ -3,17 +3,93 @@ import type { NormalizedApiError } from '../types/auth';
 
 /**
  * Base URL resolution:
- * VITE_API_BASE_URL (defaults to http://localhost:8000/api or /api)
+ * If VITE_USE_MOCKS !== 'false' (default), use relative URL '' so MSW intercepts on the current host.
+ * If connecting to Django backend, use VITE_API_BASE_URL or fallback to http://localhost:8000/api.
  */
-export const RAW_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').trim().replace(/\/$/, '');
+const mocksEnabled = import.meta.env.VITE_USE_MOCKS !== 'false';
+export const RAW_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL !== undefined
+    ? import.meta.env.VITE_API_BASE_URL
+    : mocksEnabled
+    ? ''
+    : 'http://localhost:8000/api'
+).trim().replace(/\/$/, '');
 
 /**
- * Extracts Django CSRF cookie token from browser cookies.
+ * In-memory CSRF token storage.
+ * As Django uses HttpOnly cookies for CSRF, document.cookie cannot read the token in JavaScript.
+ * The backend exposes the CSRF token in the X-CSRFToken response header of GET /api/v1/csrf/.
+ * It is kept strictly in-memory (never localStorage or sessionStorage).
+ */
+let inMemoryCsrfToken: string | null = null;
+let csrfFetchPromise: Promise<string | null> | null = null;
+
+function extractCsrfFromHeaders(headers: unknown): string | null {
+  if (!headers || typeof headers !== 'object') return null;
+  const h = headers as Record<string, unknown>;
+  if (typeof h['x-csrftoken'] === 'string') return h['x-csrftoken'];
+  if (typeof h['X-CSRFToken'] === 'string') return h['X-CSRFToken'];
+  if (typeof (h as { get?: (k: string) => unknown }).get === 'function') {
+    const val = (h as { get: (k: string) => unknown }).get('x-csrftoken');
+    if (typeof val === 'string') return val;
+  }
+  for (const [k, v] of Object.entries(h)) {
+    if (k.toLowerCase() === 'x-csrftoken' && typeof v === 'string') {
+      return v;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts Django CSRF token (checks memory first, fallback to document.cookie).
  */
 export function getCsrfToken(): string | null {
+  if (inMemoryCsrfToken) return inMemoryCsrfToken;
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+/**
+ * Updates the in-memory CSRF token.
+ */
+export function setCsrfToken(token: string | null): void {
+  inMemoryCsrfToken = token;
+}
+
+/**
+ * Fetches the CSRF token from the backend /api/v1/csrf/ endpoint and caches it in memory.
+ * Shared in-flight promise guarantees only one fetch runs at a time.
+ */
+export async function fetchCsrfToken(reason?: string): Promise<string | null> {
+  if (csrfFetchPromise) return csrfFetchPromise;
+
+  if (import.meta.env.DEV) {
+    console.info(`[CSRF] Fetching fresh token (reason: ${reason || 'unspecified'})...`);
+  }
+
+  csrfFetchPromise = (async () => {
+    try {
+      const res = await axiosClient.get<{ detail?: string }>('/api/v1/csrf/', {
+        headers: {
+          'X-Skip-Csrf': 'true',
+        },
+      });
+      const token = extractCsrfFromHeaders(res.headers);
+      if (token) {
+        inMemoryCsrfToken = token;
+      }
+      return inMemoryCsrfToken;
+    } catch (err) {
+      console.warn('[CSRF] Failed to fetch CSRF token:', err);
+      return null;
+    } finally {
+      csrfFetchPromise = null;
+    }
+  })();
+
+  return csrfFetchPromise;
 }
 
 /**
@@ -61,7 +137,7 @@ export const axiosClient: AxiosInstance = axios.create({
 });
 
 // Request Interceptor: prevent duplicate `/api/` prefixes and attach headers
-axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+axiosClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   if (config.url) {
     const baseEndsWithApi = (config.baseURL || '').replace(/\/$/, '').endsWith('/api');
     // If baseURL already ends with /api, strip redundant /api or api/ from url
@@ -70,10 +146,22 @@ axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     }
   }
 
+  const method = (config.method || 'get').toUpperCase();
+  const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+  const skipCsrf = Boolean(config.headers?.['X-Skip-Csrf']);
+
+  if (isMutating && !skipCsrf && !inMemoryCsrfToken) {
+    await fetchCsrfToken();
+  }
+
   // Django CSRF token
   const csrf = getCsrfToken();
-  if (csrf && config.headers) {
+  if (csrf && config.headers && !skipCsrf) {
     config.headers['X-CSRFToken'] = csrf;
+  }
+
+  if (config.headers?.['X-Skip-Csrf']) {
+    delete config.headers['X-Skip-Csrf'];
   }
 
   // Attach token if present
@@ -87,8 +175,39 @@ axiosClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // Response Interceptor: normalize error to { code: string, message: string, fieldErrors?: Record<string, string[]> }
 axiosClient.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError<Record<string, unknown>>) => {
+  (response) => {
+    const token = extractCsrfFromHeaders(response.headers);
+    if (token) {
+      inMemoryCsrfToken = token;
+    }
+    return response;
+  },
+  async (error: AxiosError<Record<string, unknown>>) => {
+    if (error.response?.headers) {
+      const token = extractCsrfFromHeaders(error.response.headers);
+      if (token) {
+        inMemoryCsrfToken = token;
+      }
+    }
+
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _isCsrfRetry?: boolean }) | undefined;
+    const isCsrfError =
+      error.response?.status === 403 &&
+      (typeof error.response.data === 'object' &&
+        (String((error.response.data as Record<string, unknown>)?.message || '').toLowerCase().includes('csrf') ||
+         (error.response.data as Record<string, unknown>)?.code === 'permission_denied'));
+
+    // Requirement 4: On a 403 CSRF failure, fetch a fresh token and retry ONCE
+    if (isCsrfError && originalRequest && !originalRequest._isCsrfRetry) {
+      originalRequest._isCsrfRetry = true;
+      inMemoryCsrfToken = null;
+      const freshToken = await fetchCsrfToken('retry');
+      if (freshToken && originalRequest.headers) {
+        originalRequest.headers['X-CSRFToken'] = freshToken;
+      }
+      return axiosClient(originalRequest);
+    }
+
     let normalized: NormalizedApiError = {
       code: 'network_error',
       message: 'Network error or server unreachable. Please check your connection.',
@@ -133,11 +252,17 @@ axiosClient.interceptors.response.use(
       }
 
       const defaultMsg = status === 400 ? 'Please fix the validation errors.' : `Request failed with status ${status}`;
-      const msg = typeof data?.message === 'string' 
+      let msg = typeof data?.message === 'string' 
         ? data.message 
         : typeof data?.detail === 'string' 
           ? data.detail 
           : defaultMsg;
+
+      // Requirement 6: Never show raw "CSRF verification failed". Show friendly message and refresh token silently
+      if (typeof msg === 'string' && msg.toLowerCase().includes('csrf')) {
+        msg = 'Your session expired. Please try again.';
+        void fetchCsrfToken('retry');
+      }
 
       normalized = {
         code: (typeof data?.code === 'string' ? data.code : undefined) || `http_${status}`,

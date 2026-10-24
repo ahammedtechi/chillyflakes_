@@ -157,5 +157,8 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  role: 'admin';
+  role: 'admin' | string;
+  role_id?: string;
+  role_name?: string;
+  permissions?: string[];
 }

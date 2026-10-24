@@ -6,10 +6,14 @@ import { VendorRegisterPage } from '../features/auth/pages/VendorRegisterPage';
 import { VendorLoginPage } from '../features/auth/pages/VendorLoginPage';
 import { VendorVerifyOtpPage } from '../features/auth/pages/VendorVerifyOtpPage';
 import { VendorForgotPasswordPage } from '../features/auth/pages/VendorForgotPasswordPage';
-import { VendorOnboardingPlaceholder } from '../features/auth/pages/VendorOnboardingPlaceholder';
-import { VendorStatusPlaceholder } from '../features/auth/pages/VendorStatusPlaceholder';
+import { VendorOnboardingPage } from '../features/onboarding/pages/VendorOnboardingPage';
+import { VendorStatusPage } from '../features/onboarding/pages/VendorStatusPage';
 import { VendorLayout } from '../layouts/VendorLayout';
-import { RequireApprovedVendor } from './RequireApprovedVendor';
+import {
+  RequireApprovedVendor,
+  RequireVendorOnboarding,
+  RequireVendorStatusGate,
+} from './RequireApprovedVendor';
 import { VendorDashboardPage } from '../features/dashboard/pages/VendorDashboardPage';
 import { VendorPlaceholderPage } from '../features/dashboard/pages/VendorPlaceholderPage';
 import { VendorProductsPage } from '../features/products/pages/VendorProductsPage';
@@ -23,7 +27,11 @@ import { AdminDashboardPage } from '../features/admin/pages/AdminDashboardPage';
 import { AdminProductReviewsPage } from '../features/admin/pages/AdminProductReviewsPage';
 import { AdminProductReviewDetailPage } from '../features/admin/pages/AdminProductReviewDetailPage';
 import { AdminCategoriesPage } from '../features/admin/pages/AdminCategoriesPage';
-import { AdminPlaceholderPage } from '../features/admin/pages/AdminPlaceholderPage';
+import { AdminCustomersPage } from '../features/admin/pages/AdminCustomersPage';
+import { AdminSellersPage } from '../features/admin/pages/AdminSellersPage';
+import { AdminStaffPage } from '../features/admin/pages/AdminStaffPage';
+import { AdminAuditLogPage } from '../features/admin/pages/AdminAuditLogPage';
+import { RequirePermission } from './RequirePermission';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -88,21 +96,25 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/vendor/onboarding"
         element={
-          <AuthLayout>
-            <VendorOnboardingPlaceholder />
-          </AuthLayout>
+          <RequireVendorOnboarding>
+            <AuthLayout>
+              <VendorOnboardingPage />
+            </AuthLayout>
+          </RequireVendorOnboarding>
         }
       />
       <Route
         path="/vendor/status"
         element={
-          <AuthLayout>
-            <VendorStatusPlaceholder />
-          </AuthLayout>
+          <RequireVendorStatusGate>
+            <AuthLayout>
+              <VendorStatusPage />
+            </AuthLayout>
+          </RequireVendorStatusGate>
         }
       />
 
-      {/* Super Admin Routes */}
+      {/* Super Admin Console Routes */}
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route
         element={
@@ -111,12 +123,88 @@ export const AppRoutes: React.FC = () => {
           </RequireAdmin>
         }
       >
-        <Route path="/admin" element={<Navigate to="/admin/product-reviews" replace />} />
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-        <Route path="/admin/product-reviews" element={<AdminProductReviewsPage />} />
-        <Route path="/admin/product-reviews/:id" element={<AdminProductReviewDetailPage />} />
-        <Route path="/admin/categories" element={<AdminCategoriesPage />} />
-        <Route path="/admin/seller-approvals" element={<AdminPlaceholderPage />} />
+        <Route
+          path="/admin"
+          element={
+            <RequirePermission module="overview">
+              <AdminDashboardPage />
+            </RequirePermission>
+          }
+        />
+        <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+
+        {/* People & Merchants */}
+        <Route
+          path="/admin/people/customers"
+          element={
+            <RequirePermission module="customers">
+              <AdminCustomersPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/admin/people/sellers"
+          element={
+            <RequirePermission module="sellers">
+              <AdminSellersPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/admin/people/sellers/:id"
+          element={
+            <RequirePermission module="sellers">
+              <AdminSellersPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/admin/people/staff"
+          element={
+            <RequirePermission module="staff_roles">
+              <AdminStaffPage />
+            </RequirePermission>
+          }
+        />
+
+        {/* Catalog */}
+        <Route
+          path="/admin/product-reviews"
+          element={
+            <RequirePermission module="products">
+              <AdminProductReviewsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/admin/product-reviews/:id"
+          element={
+            <RequirePermission module="products">
+              <AdminProductReviewDetailPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/admin/categories"
+          element={
+            <RequirePermission module="categories">
+              <AdminCategoriesPage />
+            </RequirePermission>
+          }
+        />
+
+        {/* System */}
+        <Route
+          path="/admin/audit-log"
+          element={
+            <RequirePermission module="audit_log">
+              <AdminAuditLogPage />
+            </RequirePermission>
+          }
+        />
+
+        {/* Legacy redirect */}
+        <Route path="/admin/seller-approvals" element={<Navigate to="/admin/people/sellers" replace />} />
       </Route>
 
       {/* Legal & Policy Pages */}

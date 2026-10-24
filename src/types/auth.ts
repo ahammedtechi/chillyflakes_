@@ -15,6 +15,7 @@ export type VendorStatus =
   | 'pending_verification'
   | 'onboarding_incomplete'
   | 'under_review'
+  | 'resubmission_requested'
   | 'rejected'
   | 'suspended'
   | 'approved';

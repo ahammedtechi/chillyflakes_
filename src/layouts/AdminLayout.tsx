@@ -1,87 +1,264 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { NavLink, Link, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
   CheckSquare,
   Users,
+  Store,
+  ShieldCheck,
+  Layers,
+  FileText,
+  ShoppingBag,
+  CreditCard,
+  FileEdit,
+  Settings,
+  Bell,
   LogOut,
   Menu,
   X,
   ChevronDown,
-  Shield,
-  Clock,
-  Layers,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { useAdminAuth } from '../context/AdminAuthContext';
+import { usePermission } from '../features/admin/hooks/usePermission';
 import { useAdminProducts } from '../features/admin/hooks/useAdminProducts';
+import { useAdminSellers } from '../features/admin/hooks/useAdminSellers';
 import { ToastProvider } from '../components/vendor/Toast';
+import type { AdminModule } from '../types/admin';
+
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  module?: AdminModule;
+  badge?: string;
+  badgeColor?: string;
+  isPlaceholder?: boolean;
+}
+
+interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
 
 export const AdminLayout: React.FC = () => {
   const location = useLocation();
   const { admin, logout } = useAdminAuth();
+  const { canView, isSuperAdmin } = usePermission();
 
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // Get live pending review count
+  // Live pending product reviews
   const { data: queueData } = useAdminProducts({ status: 'pending_review', page_size: 1 });
-  const pendingCount = queueData?.status_counts?.pending_review ?? 0;
+  const pendingProductCount = queueData?.status_counts?.pending_review ?? 0;
 
+  // Live pending seller reviews
+  const { data: sellersData } = useAdminSellers({ status: 'under_review', page_size: 1 });
+  const pendingSellerCount = sellersData?.tab_counts?.under_review ?? 0;
+
+  const totalAlertCount = pendingProductCount + pendingSellerCount;
+
+  // Close menus on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(target)) {
+        setNotifDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close on route change
   useEffect(() => {
     setMobileDrawerOpen(false);
     setUserMenuOpen(false);
+    setNotifDropdownOpen(false);
   }, [location.pathname]);
 
-  const navItems = [
-    {
-      label: 'Dashboard',
-      path: '/admin/dashboard',
-      icon: <LayoutDashboard className="w-4 h-4" />,
-      badge: pendingCount > 0 ? `${pendingCount} pending` : undefined,
-    },
-    {
-      label: 'Product Reviews',
-      path: '/admin/product-reviews',
-      icon: <CheckSquare className="w-4 h-4" />,
-      badge: pendingCount > 0 ? String(pendingCount) : undefined,
-      badgeColor: 'bg-[#FAF3E0] text-[#8A5A00] border-[#F3E2B8]',
-    },
-    {
-      label: 'Categories',
-      path: '/admin/categories',
-      icon: <Layers className="w-4 h-4" />,
-    },
-    {
-      label: 'Seller Approvals',
-      path: '/admin/seller-approvals',
-      icon: <Users className="w-4 h-4" />,
-      badge: 'Soon',
-      badgeColor: 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
-    },
-  ];
-
-  const getPageTitle = () => {
-    if (location.pathname.startsWith('/admin/product-reviews/')) return 'Product Inspection';
-    if (location.pathname.startsWith('/admin/product-reviews')) return 'Product Reviews';
-    if (location.pathname.startsWith('/admin/categories')) return 'Categories Management';
-    if (location.pathname.startsWith('/admin/seller-approvals')) return 'Seller Approvals';
-    if (location.pathname.startsWith('/admin/dashboard')) return 'Admin Overview';
-    return 'Super Admin Console';
+  const toggleGroup = (groupId: string) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
   };
+
+  const navGroups: NavGroup[] = useMemo(() => {
+    return [
+      {
+        id: 'overview',
+        label: 'Overview',
+        items: [
+          {
+            label: 'Marketplace Overview',
+            path: '/admin',
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            module: 'overview',
+          },
+        ],
+      },
+      {
+        id: 'people',
+        label: 'People & Merchants',
+        items: [
+          {
+            label: 'Customer Management',
+            path: '/admin/people/customers',
+            icon: <Users className="w-4 h-4" />,
+            module: 'customers',
+          },
+          {
+            label: 'Vendor & Seller Hub',
+            path: '/admin/people/sellers',
+            icon: <Store className="w-4 h-4" />,
+            module: 'sellers',
+            badge: pendingSellerCount > 0 ? `${pendingSellerCount} pending` : undefined,
+            badgeColor: 'bg-[#FAF3E0] text-[#8A5A00] border-[#F3E2B8]',
+          },
+          {
+            label: 'Staff & Roles',
+            path: '/admin/people/staff',
+            icon: <ShieldCheck className="w-4 h-4" />,
+            module: 'staff_roles',
+          },
+        ],
+      },
+      {
+        id: 'catalog',
+        label: 'Catalog',
+        items: [
+          {
+            label: 'Product Reviews',
+            path: '/admin/product-reviews',
+            icon: <CheckSquare className="w-4 h-4" />,
+            module: 'products',
+            badge: pendingProductCount > 0 ? String(pendingProductCount) : undefined,
+            badgeColor: 'bg-[#FAF3E0] text-[#8A5A00] border-[#F3E2B8]',
+          },
+          {
+            label: 'Categories',
+            path: '/admin/categories',
+            icon: <Layers className="w-4 h-4" />,
+            module: 'categories',
+          },
+        ],
+      },
+      {
+        id: 'system',
+        label: 'System & Compliance',
+        items: [
+          {
+            label: 'Audit Log',
+            path: '/admin/audit-log',
+            icon: <FileText className="w-4 h-4" />,
+            module: 'audit_log',
+          },
+        ],
+      },
+      {
+        id: 'coming_soon',
+        label: 'Operations & Settings',
+        items: [
+          {
+            label: 'Orders & Returns',
+            path: '/admin/orders',
+            icon: <ShoppingBag className="w-4 h-4" />,
+            badge: 'Soon',
+            badgeColor: 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
+            isPlaceholder: true,
+          },
+          {
+            label: 'Finance & Payouts',
+            path: '/admin/finance',
+            icon: <CreditCard className="w-4 h-4" />,
+            badge: 'Soon',
+            badgeColor: 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
+            isPlaceholder: true,
+          },
+          {
+            label: 'Content & CMS',
+            path: '/admin/content',
+            icon: <FileEdit className="w-4 h-4" />,
+            badge: 'Soon',
+            badgeColor: 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
+            isPlaceholder: true,
+          },
+          {
+            label: 'Store Settings',
+            path: '/admin/settings',
+            icon: <Settings className="w-4 h-4" />,
+            badge: 'Soon',
+            badgeColor: 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
+            isPlaceholder: true,
+          },
+        ],
+      },
+    ];
+  }, [pendingProductCount, pendingSellerCount]);
+
+  // Filter groups and items based on permissions
+  const visibleGroups = useMemo(() => {
+    return navGroups
+      .map((group) => {
+        const filteredItems = group.items.filter((item) => {
+          if (item.isPlaceholder) return true;
+          if (!item.module) return true;
+          return canView(item.module);
+        });
+        return {
+          ...group,
+          items: filteredItems,
+        };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [navGroups, canView]);
+
+  // Compute Breadcrumb segments
+  const breadcrumb = useMemo(() => {
+    const path = location.pathname;
+    if (path === '/admin' || path === '/admin/dashboard') {
+      return ['Admin Console', 'Overview', 'Marketplace Overview'];
+    }
+    if (path.startsWith('/admin/people/customers')) {
+      return ['Admin Console', 'People & Merchants', 'Customer Management'];
+    }
+    if (path.startsWith('/admin/people/sellers/')) {
+      return ['Admin Console', 'People & Merchants', 'Vendor Inspection'];
+    }
+    if (path.startsWith('/admin/people/sellers')) {
+      return ['Admin Console', 'People & Merchants', 'Vendor & Seller Hub'];
+    }
+    if (path.startsWith('/admin/people/staff')) {
+      return ['Admin Console', 'People & Merchants', 'Staff & Role Permissions'];
+    }
+    if (path.startsWith('/admin/product-reviews/')) {
+      return ['Admin Console', 'Catalog', 'Product Inspection'];
+    }
+    if (path.startsWith('/admin/product-reviews')) {
+      return ['Admin Console', 'Catalog', 'Product Reviews'];
+    }
+    if (path.startsWith('/admin/categories')) {
+      return ['Admin Console', 'Catalog', 'Categories'];
+    }
+    if (path.startsWith('/admin/audit-log')) {
+      return ['Admin Console', 'System', 'Audit Log'];
+    }
+    return ['Admin Console', 'Portal'];
+  }, [location.pathname]);
 
   return (
     <ToastProvider>
@@ -95,215 +272,386 @@ export const AdminLayout: React.FC = () => {
           {/* Logo Area */}
           <div className="h-20 px-6 border-b border-[#EAE5DB] flex items-center justify-between">
             <Link
-              to="/admin/product-reviews"
+              to="/admin"
               className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#2E4D34] rounded-lg p-1"
             >
               <Logo variant="dark" size="sm" showTagline={false} />
               <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2E4D34] text-white px-2 py-0.5 rounded-full shadow-2xs">
-                Super Admin
+                Admin
               </span>
             </Link>
           </div>
 
-          {/* Navigation Items */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-[#2E4D34] text-white shadow-xs font-semibold'
-                      : 'text-[#5F6D61] hover:text-[#223B28] hover:bg-[#FAF7F2]'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <div className="flex items-center gap-3">
-                      {item.icon}
-                      <span className="truncate">{item.label}</span>
+          {/* Navigation Items (Grouped & Collapsible) */}
+          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+            {visibleGroups.map((group) => {
+              const isCollapsed = Boolean(collapsedGroups[group.id]);
+              return (
+                <div key={group.id} className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.id)}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8E9B90] hover:text-[#223B28] transition-colors rounded-lg"
+                  >
+                    <span>{group.label}</span>
+                    <ChevronDown
+                      className={`w-3 h-3 transition-transform duration-200 ${
+                        isCollapsed ? '-rotate-90' : 'rotate-0'
+                      }`}
+                    />
+                  </button>
+
+                  {!isCollapsed && (
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => {
+                        const isExactActive =
+                          item.path === '/admin'
+                            ? location.pathname === '/admin' || location.pathname === '/admin/dashboard'
+                            : location.pathname.startsWith(item.path);
+
+                        if (item.isPlaceholder) {
+                          return (
+                            <div
+                              key={item.path}
+                              className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#A2ADA4] cursor-not-allowed select-none"
+                            >
+                              <div className="flex items-center gap-2.5">
+                                {item.icon}
+                                <span>{item.label}</span>
+                              </div>
+                              {item.badge && (
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${item.badgeColor || 'bg-gray-100 text-gray-500'}`}>
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <NavLink
+                            key={item.path}
+                            to={item.path}
+                            end={item.path === '/admin'}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                              isExactActive
+                                ? 'bg-[#2E4D34] text-white shadow-xs font-semibold'
+                                : 'text-[#5F6D61] hover:text-[#223B28] hover:bg-[#FAF7F2]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              {item.icon}
+                              <span>{item.label}</span>
+                            </div>
+                            {item.badge && (
+                              <span
+                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                                  isExactActive
+                                    ? 'bg-white/20 text-white border-white/30'
+                                    : item.badgeColor || 'bg-[#FAF3E0] text-[#8A5A00] border-[#F3E2B8]'
+                                }`}
+                              >
+                                {item.badge}
+                              </span>
+                            )}
+                          </NavLink>
+                        );
+                      })}
                     </div>
-                    {item.badge && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                          isActive
-                            ? 'bg-white/20 text-white border-white/30'
-                            : item.badgeColor || 'bg-[#EAE5DB] text-[#5F6D61] border-transparent'
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
-                )}
-              </NavLink>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Sidebar Bottom Profile */}
-          <div className="p-4 border-t border-[#EAE5DB] bg-[#FAF7F2]/50">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#2E4D34] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-                <Shield className="w-4 h-4" />
+          {/* Quick Staff User Switcher Footer / Profile */}
+          <div className="p-3 border-t border-[#EAE5DB] bg-[#FDFCF9]">
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <div className="w-7 h-7 rounded-full bg-[#EAF1EA] border border-[#D1DDD0] flex items-center justify-center text-xs font-bold text-[#2E4D34] shrink-0">
+                  {admin?.name?.charAt(0) || 'A'}
+                </div>
+                <div className="truncate text-left">
+                  <p className="text-xs font-semibold text-[#223B28] truncate">{admin?.name || 'Administrator'}</p>
+                  <p className="text-[10px] text-[#8E9B90] truncate font-medium">
+                    {admin?.role_name || (isSuperAdmin ? 'Super Admin' : 'Staff')}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-[#223B28] truncate">
-                  {admin?.name || 'Platform Admin'}
-                </p>
-                <p className="text-[11px] text-[#8E9B90] truncate">
-                  {admin?.email || 'admin@test.com'}
-                </p>
-              </div>
+
+              <button
+                type="button"
+                onClick={logout}
+                title="Sign Out"
+                className="p-1.5 text-[#5F6D61] hover:text-[#9E2A2B] hover:bg-[#FAF7F2] rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </aside>
 
+        {/* MOBILE TOP BAR */}
+        <header className="lg:hidden h-16 bg-white border-b border-[#EAE5DB] px-4 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileDrawerOpen(true)}
+              className="p-2 -ml-2 text-[#223B28] hover:bg-[#FAF7F2] rounded-lg focus:outline-none"
+              aria-label="Open mobile navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <Logo variant="dark" size="sm" showTagline={false} />
+          </div>
+
+          <div className="flex items-center gap-2">
+            {import.meta.env.DEV && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">
+                Dev
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+              className="relative p-2 text-[#5F6D61] hover:text-[#223B28] rounded-lg"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {totalAlertCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#9E2A2B]" />
+              )}
+            </button>
+          </div>
+        </header>
+
         {/* MOBILE DRAWER */}
         {mobileDrawerOpen && (
-          <div
-            className="fixed inset-0 z-50 lg:hidden bg-black/40 backdrop-blur-xs flex animate-fadeIn"
-            onClick={() => setMobileDrawerOpen(false)}
-          >
+          <div className="fixed inset-0 z-50 lg:hidden flex">
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setMobileDrawerOpen(false)}
+            />
             <div
               ref={drawerRef}
-              className="w-72 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col animate-slideInLeft"
-              onClick={(e) => e.stopPropagation()}
+              className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col z-10 animate-slideRight"
             >
-              <div className="h-16 px-5 border-b border-[#EAE5DB] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Logo variant="dark" size="sm" showTagline={false} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2E4D34] text-white px-2 py-0.5 rounded-full">
-                    Admin
-                  </span>
-                </div>
+              <div className="h-16 px-4 border-b border-[#EAE5DB] flex items-center justify-between">
+                <Logo variant="dark" size="sm" showTagline={false} />
                 <button
                   type="button"
                   onClick={() => setMobileDrawerOpen(false)}
-                  className="p-1.5 rounded-lg text-[#637365] hover:text-[#223B28] hover:bg-[#FAF7F2]"
+                  className="p-2 text-[#5F6D61] hover:text-[#223B28] rounded-lg"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
-                {navItems.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileDrawerOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all ${
-                        isActive
-                          ? 'bg-[#2E4D34] text-white shadow-xs font-semibold'
-                          : 'text-[#5F6D61] hover:text-[#223B28] hover:bg-[#FAF7F2]'
-                      }`
-                    }
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon}
-                      <span className="truncate">{item.label}</span>
+              <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+                {visibleGroups.map((group) => (
+                  <div key={group.id} className="space-y-1">
+                    <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-[#8E9B90]">
+                      {group.label}
+                    </p>
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          end={item.path === '/admin'}
+                          onClick={() => setMobileDrawerOpen(false)}
+                          className={({ isActive }) =>
+                            `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                              isActive
+                                ? 'bg-[#2E4D34] text-white shadow-xs font-semibold'
+                                : 'text-[#5F6D61] hover:text-[#223B28] hover:bg-[#FAF7F2]'
+                            }`
+                          }
+                        >
+                          <div className="flex items-center gap-2.5">
+                            {item.icon}
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FAF3E0] text-[#8A5A00] border border-[#F3E2B8]">
+                              {item.badge}
+                            </span>
+                          )}
+                        </NavLink>
+                      ))}
                     </div>
-                    {item.badge && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#EAE5DB] text-[#5F6D61]">
-                        {item.badge}
-                      </span>
-                    )}
-                  </NavLink>
+                  </div>
                 ))}
               </div>
 
-              <div className="p-4 border-t border-[#EAE5DB] bg-[#FAF7F2]/60">
+              <div className="p-4 border-t border-[#EAE5DB] bg-[#FDFCF9]">
                 <button
                   type="button"
-                  onClick={() => logout()}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#EAE5DB] bg-white text-xs font-semibold text-[#DC2626] hover:bg-[#FFF0F0] transition-colors"
+                  onClick={logout}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-[#D1DDD0] text-xs font-semibold text-[#9E2A2B] hover:bg-red-50"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Logout</span>
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* MAIN BODY AREA */}
-        <div className="lg:pl-64 flex flex-col min-h-screen">
-          {/* Topbar */}
-          <header className="sticky top-0 z-20 h-16 sm:h-20 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#EAE5DB] flex items-center justify-between px-4 sm:px-8">
-            <div className="flex items-center gap-3 sm:gap-4">
+        {/* DESKTOP TOP HEADER */}
+        <header className="hidden lg:flex items-center justify-between h-16 bg-white border-b border-[#EAE5DB] px-8 fixed top-0 right-0 left-64 z-20">
+          {/* Breadcrumb Navigation */}
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-medium text-[#5F6D61]">
+            {breadcrumb.map((crumb, idx) => (
+              <React.Fragment key={idx}>
+                {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-[#8E9B90]" />}
+                <span className={idx === breadcrumb.length - 1 ? 'font-semibold text-[#223B28]' : 'text-[#8E9B90]'}>
+                  {crumb}
+                </span>
+              </React.Fragment>
+            ))}
+          </nav>
+
+          {/* Header Right Actions */}
+          <div className="flex items-center gap-4">
+            {/* Environment Badge */}
+            {import.meta.env.DEV && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Development
+              </span>
+            )}
+
+            {/* Notification Bell with Dropdown */}
+            <div className="relative" ref={notifRef}>
               <button
                 type="button"
-                onClick={() => setMobileDrawerOpen(true)}
-                className="lg:hidden p-2 rounded-xl border border-[#EAE5DB] bg-white text-[#223B28] hover:bg-[#FAF7F2] transition-colors"
-                aria-label="Open navigation"
+                onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                className="relative p-2 text-[#5F6D61] hover:text-[#223B28] hover:bg-[#FAF7F2] rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#2E4D34]"
+                aria-label="View notifications"
               >
-                <Menu className="w-5 h-5" />
+                <Bell className="w-5 h-5" />
+                {totalAlertCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#9E2A2B] text-[9px] font-bold text-white shadow-2xs">
+                    {totalAlertCount}
+                  </span>
+                )}
               </button>
-              <h2 className="text-base sm:text-lg font-bold text-[#223B28] tracking-tight">
-                {getPageTitle()}
-              </h2>
+
+              {/* Notification Dropdown */}
+              {notifDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-[#EAE5DB] py-2 z-50 animate-fadeIn">
+                  <div className="px-4 py-2 border-b border-[#EAE5DB] flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#223B28] uppercase tracking-wider">
+                      Operational Alerts
+                    </span>
+                    <span className="text-[10px] text-[#8E9B90] font-medium">
+                      {totalAlertCount} requiring action
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-[#F0EDE6] max-h-72 overflow-y-auto">
+                    {pendingSellerCount > 0 && (
+                      <Link
+                        to="/admin/people/sellers"
+                        onClick={() => setNotifDropdownOpen(false)}
+                        className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAF7F2] transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+                          <Store className="w-4 h-4" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-semibold text-[#223B28]">
+                            {pendingSellerCount} seller onboarding applications
+                          </p>
+                          <p className="text-[11px] text-[#5F6D61]">
+                            Merchants awaiting KYC document review and verification.
+                          </p>
+                        </div>
+                      </Link>
+                    )}
+
+                    {pendingProductCount > 0 && (
+                      <Link
+                        to="/admin/product-reviews"
+                        onClick={() => setNotifDropdownOpen(false)}
+                        className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAF7F2] transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#2E4D34] shrink-0 mt-0.5">
+                          <CheckSquare className="w-4 h-4" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-semibold text-[#223B28]">
+                            {pendingProductCount} catalog products awaiting review
+                          </p>
+                          <p className="text-[11px] text-[#5F6D61]">
+                            Items submitted by sellers awaiting publication approval.
+                          </p>
+                        </div>
+                      </Link>
+                    )}
+
+                    {totalAlertCount === 0 && (
+                      <div className="px-4 py-6 text-center text-xs text-[#8E9B90]">
+                        <Sparkles className="w-5 h-5 mx-auto mb-1 text-emerald-600" />
+                        All clear! No pending operational reviews.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4">
-              {/* Queue Status Pill */}
-              <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF3E0] text-[#8A5A00] border border-[#F3E2B8] text-xs font-medium">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{pendingCount} waiting review</span>
-              </div>
+            {/* User Profile Menu */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-[#FAF7F2] transition-colors border border-transparent hover:border-[#EAE5DB]"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#EAF1EA] border border-[#D1DDD0] flex items-center justify-center text-xs font-bold text-[#2E4D34]">
+                  {admin?.name?.charAt(0) || 'A'}
+                </div>
+                <div className="text-left leading-tight hidden xl:block">
+                  <p className="text-xs font-semibold text-[#223B28]">{admin?.name || 'Admin User'}</p>
+                  <p className="text-[10px] text-[#8E9B90] capitalize">
+                    {admin?.role_name || (isSuperAdmin ? 'Super Admin' : 'Staff')}
+                  </p>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-[#8E9B90]" />
+              </button>
 
-              {/* User Menu */}
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2.5 p-1 sm:pr-3 rounded-full sm:rounded-xl border border-[#EAE5DB] bg-white hover:bg-[#FAF7F2] transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#2E4D34] text-white flex items-center justify-center text-xs font-bold">
-                    A
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-[#EAE5DB] py-2 z-50 animate-fadeIn">
+                  <div className="px-4 py-2 border-b border-[#EAE5DB]">
+                    <p className="text-xs font-bold text-[#223B28]">{admin?.name}</p>
+                    <p className="text-[11px] text-[#8E9B90] truncate">{admin?.email}</p>
+                    <span className="inline-block mt-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#EAF1EA] text-[#2E4D34] border border-[#D1DDD0]">
+                      {admin?.role_name || (isSuperAdmin ? 'Super Admin' : 'Staff')}
+                    </span>
                   </div>
-                  <div className="hidden sm:block text-left text-xs leading-tight">
-                    <p className="font-semibold text-[#223B28] truncate max-w-[120px]">
-                      {admin?.name || 'Super Admin'}
-                    </p>
-                    <p className="text-[10px] text-[#8E9B90]">Platform Staff</p>
-                  </div>
-                  <ChevronDown className="hidden sm:block w-3.5 h-3.5 text-[#8E9B90]" />
-                </button>
 
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-[#EAE5DB] py-2 z-30 animate-fadeIn text-xs">
-                    <div className="px-4 py-2 border-b border-[#EAE5DB] mb-1">
-                      <p className="font-bold text-[#223B28] truncate">{admin?.name}</p>
-                      <p className="text-[#8E9B90] text-[11px] truncate">{admin?.email}</p>
-                    </div>
-
+                  <div className="py-1">
                     <button
                       type="button"
-                      onClick={() => logout()}
-                      className="w-full flex items-center gap-2.5 px-4 py-2 text-[#DC2626] hover:bg-[#FFF0F0] transition-colors text-left font-medium"
+                      onClick={logout}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-[#9E2A2B] hover:bg-red-50 transition-colors font-medium text-left"
                     >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Logout</span>
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          </header>
+          </div>
+        </header>
 
-          {/* Main Outlet */}
-          <main className="flex-1 max-w-[1360px] w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 focus:outline-none">
-            <Outlet />
-          </main>
-
-          {/* Footer */}
-          <footer className="border-t border-[#EAE5DB] bg-white py-4 px-4 sm:px-8 text-xs text-[#8E9B90] flex items-center justify-between">
-            <p>© 2026 ChillyFlakes Marketplace. Internal Super Administrator Console.</p>
-            <p>Confidential & Secure</p>
-          </footer>
-        </div>
+        {/* MAIN OUTLET CONTAINER */}
+        <main className="flex-1 lg:ml-64 pt-4 lg:pt-20 px-4 sm:px-8 pb-16">
+          <Outlet />
+        </main>
       </div>
     </ToastProvider>
   );

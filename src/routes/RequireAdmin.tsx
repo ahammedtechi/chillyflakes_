@@ -31,8 +31,8 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
     return <AdminNoAccessPage role="vendor" />;
   }
 
-  // If not signed in as admin, redirect to admin login
-  if (!admin || admin.role !== 'admin') {
+  // If not signed in as admin or staff, redirect to admin login
+  if (!admin) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
