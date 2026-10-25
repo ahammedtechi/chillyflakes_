@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
+import { DemoBanner } from '../components/DemoBanner';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#223B28] flex flex-col font-sans selection:bg-[#2E4D34] selection:text-white">
+      {import.meta.env.VITE_DEMO_MODE === 'true' && <DemoBanner />}
       {/* Top Header */}
       <header className="sticky top-0 z-40 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#EAE5DB]">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">

@@ -25,6 +25,7 @@ import { Logo } from '../components/Logo';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { useAuth } from '../hooks/useAuth';
 import { ToastProvider } from '../components/vendor/Toast';
+import { DemoBanner } from '../components/DemoBanner';
 
 export const VendorLayout: React.FC = () => {
   const { t } = useTranslation();
@@ -126,6 +127,7 @@ export const VendorLayout: React.FC = () => {
   return (
     <ToastProvider>
       <div className="min-h-screen bg-[#FAF7F2] text-[#223B28] flex flex-col font-sans selection:bg-[#2E4D34] selection:text-white">
+        {import.meta.env.VITE_DEMO_MODE === 'true' && <DemoBanner />}
         {/* Skip to Content for Accessibility */}
         <a
           href="#main-content"

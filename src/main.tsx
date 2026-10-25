@@ -24,7 +24,15 @@ const queryClient = new QueryClient({
 // Start MSW whenever VITE_USE_MOCKS !== 'false' (both in dev and on Vercel preview/demos)
 // Vendor auth endpoints are passed through to real Django backend locally via MSW passthrough
 async function prepareApp(): Promise<void> {
-  if (import.meta.env.VITE_USE_MOCKS !== 'false') {
+  if (import.meta.env.VITE_DEMO_MODE === 'true') {
+    try {
+      const { startDemoWorker } = await import('./mocks/demoBrowser');
+      await startDemoWorker();
+      console.info('[Demo] Mock Service Worker running in DEMO MODE.');
+    } catch (err) {
+      console.warn('[Demo] Failed to initialize Demo MSW:', err);
+    }
+  } else if (import.meta.env.VITE_USE_MOCKS !== 'false') {
     try {
       const { worker } = await import('./mocks/browser');
       await worker.start({

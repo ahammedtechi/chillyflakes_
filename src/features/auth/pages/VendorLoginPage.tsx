@@ -21,6 +21,10 @@ import { PasswordInput } from '../../../components/ui/PasswordInput';
 import { Button } from '../../../components/ui/Button';
 import type { NormalizedApiError, VendorStatus } from '../../../types/auth';
 
+const DemoLoginHelper = import.meta.env.VITE_DEMO_MODE === 'true'
+  ? React.lazy(() => import('../components/DemoLoginHelper'))
+  : null;
+
 function getRedirectForStatus(status: VendorStatus, from?: string): string {
   switch (status) {
     case 'pending_verification':
@@ -61,6 +65,7 @@ export const VendorLoginPage: React.FC = () => {
     register,
     handleSubmit,
     control,
+    setValue,
     resetField,
     formState: { errors },
   } = useForm<VendorLoginFormData>({
@@ -300,6 +305,17 @@ export const VendorLoginPage: React.FC = () => {
             </Link>
           </div>
         </form>
+
+        {import.meta.env.VITE_DEMO_MODE === 'true' && DemoLoginHelper && (
+          <React.Suspense fallback={null}>
+            <DemoLoginHelper
+              onFill={(identifier, password) => {
+                setValue('identifier', identifier, { shouldValidate: true });
+                setValue('password', password, { shouldValidate: true });
+              }}
+            />
+          </React.Suspense>
+        )}
       </div>
     </div>
   );
